@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Disaster Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Submit Your Disaster Report</h1>
+        <form method="POST" action="/report">
+            <label for="description">Report Description:</label>
+            <textarea id="description" name="description" rows="5" placeholder="Describe the disaster..." required></textarea>
+            
+            <label for="location">Location (optional):</label>
+            <input type="text" id="location" name="location" placeholder="Enter location details">
+            
+            <button type="submit" class="btn">Submit Report</button>
+        </form>
+    </div>
+</body>
+</html>
