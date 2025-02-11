@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h2 class="text-center">SOS Alert</h2>
+        <form method="POST">
+            <div class="form-group">
+                <label for="location">Your Location</label>
+                <input type="text" class="form-control" id="location" name="location" required>
+            </div>
+            <button type="submit" class="btn btn-danger btn-block">Send SOS</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,21 +1,56 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import spacy
 import requests
 from submit_report import get_coordinates
+from flask_mail import Mail, Message
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import session
+from flask_login import current_user
+
+ 
+
+
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
-
-# Configure PostgreSQL Database
+app.config['SECRET_KEY'] = 'your_secret_key_here'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin@localhost/disaster_reports'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Configure Flask-Mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'parthlhase49@gmail.com'
+app.config['MAIL_PASSWORD'] = 'Parth@2610'
+mail = Mail(app)
+
 db = SQLAlchemy(app)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
 
 # Load NLP model
 nlp = spacy.load("en_core_web_sm")
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
 # Database Models
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255))  # Increased length to 255
+
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
 class Report(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.Text, nullable=False)
@@ -51,11 +86,66 @@ def extract_entities(text):
     locations = {ent.text for ent in doc.ents if ent.label_ in ("GPE", "LOC", "FAC")}
     return ", ".join(locations)
 
+
 @app.route('/')
+def home():
+    return redirect(url_for('login'))  # ✅ Shows main page after login
+
+@app.route('/index')
 def index():
-    return render_template('index.html')
+    return render_template('index.html')  # ✅ Shows main page after login
+
+@app.route('/debug')
+def debug():
+    return jsonify({
+        "session": dict(session),  # ✅ Convert session to dictionary for viewing
+        "is_authenticated": current_user.is_authenticated  # ✅ Check if user is logged in
+    })
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        user = User.query.filter_by(username=username).first()
+        
+        if user and user.check_password(password):
+            login_user(user, remember=True)  # ✅ Fix: Keeps user logged in
+            return redirect(url_for('index'))
+        
+        flash('Invalid username or password', 'danger')
+
+    return render_template('login.html')
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        if User.query.filter_by(username=username).first():
+            flash('Username already taken')
+            return redirect(url_for('register'))
+        if User.query.filter_by(email=email).first():
+            flash('Email already registered')
+            return redirect(url_for('register'))
+        user = User(username=username, email=email)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        flash('Registration successful. Please login.')
+        return redirect(url_for('login'))
+    return render_template('register.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 @app.route('/report', methods=['GET', 'POST'])
+@login_required
 def report():
     if request.method == 'POST':
         description = request.form.get('description')
@@ -107,6 +197,43 @@ def danger_zones():
 @app.route('/map')
 def map_view():
     return render_template('map.html')
+
+@app.route('/sos', methods=['POST'])
+@login_required
+def sos():
+    # Assuming you're receiving the location as part of the JSON body
+    data = request.get_json()
+    user_location = data.get('location')
+
+    # Predefined message
+    predefined_message = "SOS! Send help immediately. I am in danger at this location."
+
+    # Retrieve the user's email and send the message
+    user_email = current_user.email
+    msg = Message('SOS Alert', sender=user_email, recipients=['parthlhase49@gmail.com'])
+    msg.body = f'{predefined_message} \n\nUser: {current_user.username} ({user_email}) \nLocation: {user_location}'
+
+    try:
+        mail.send(msg)
+        flash('SOS alert sent to authorities', 'success')  # Flash success message
+        return redirect(url_for('index'))  # Redirect to homepage or wherever you want
+    except Exception as e:
+        flash(f"An error occurred: {str(e)}", 'danger')  # Flash error message
+        return redirect(url_for('index'))  # Redirect to homepage
+
+
+
+@app.route('/broadcast', methods=['POST'])
+@login_required
+def broadcast():
+    message = request.form.get('message')
+    zones = DangerZone.query.all()
+    for zone in zones:
+        # Send message to all users in danger zones (pseudo-code)
+        # This would require a UserLocation model to track user locations
+        pass
+    flash('Broadcast message sent to danger zones')
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,4 +1,5 @@
 import requests
+from flask_mail import Message
 
 # Store API key (Replace with your actual API key)
 apikey = "AIzaSyC46htxTZ4Tvpkv2Xob8oCKqZubIvsORkM"
@@ -22,3 +23,8 @@ def get_coordinates(location_name):
     except Exception as e:
         print(f"API request failed: {e}")
         return None, None
+
+def send_email(subject, recipient, body):
+    msg = Message(subject, sender='your_email@gmail.com', recipients=[recipient])
+    msg.body = body
+    mail.send(msg)
