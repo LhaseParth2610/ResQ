@@ -23,7 +23,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'parthlhase49@gmail.com'
-app.config['MAIL_PASSWORD'] = 'Parth@2610'
+app.config['MAIL_PASSWORD'] = "ecfs othd ulqa vkxp"
 mail = Mail(app)
 
 db = SQLAlchemy(app)
@@ -210,7 +210,7 @@ def sos():
 
     # Retrieve the user's email and send the message
     user_email = current_user.email
-    msg = Message('SOS Alert', sender=user_email, recipients=['parthlhase49@gmail.com'])
+    msg = Message('SOS Alert', sender="parthlhase49@gmail.com", recipients=['sohamwalimbe20@gmail.com'])
     msg.body = f'{predefined_message} \n\nUser: {current_user.username} ({user_email}) \nLocation: {user_location}'
 
     try:
