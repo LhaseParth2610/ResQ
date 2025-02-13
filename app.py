@@ -31,7 +31,18 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
 # Load NLP model
-nlp = spacy.load("en_core_web_sm")
+import spacy
+import subprocess
+
+# Ensure spaCy model is downloaded
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    print("Downloading spaCy model...")
+    subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
+    nlp = spacy.load("en_core_web_sm")
+
+
 
 @login_manager.user_loader
 def load_user(user_id):
