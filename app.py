@@ -15,7 +15,7 @@ from flask_login import current_user
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config['SECRET_KEY'] = 'your_secret_key_here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin@localhost/disaster_reports'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:iSzwMxdBLUsLVeckIUiAQRFRUOeFnfpD@viaduct.proxy.rlwy.net:25941/railway'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configure Flask-Mail
