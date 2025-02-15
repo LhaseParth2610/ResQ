@@ -7,19 +7,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
-
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: beige;
+            background-color: #f8f9fa;
             margin: 0;
             padding: 0;
         }
-
-        /* Navbar styles */
         nav {
             background-color: #1E3A8A;
-            color: wheat;
+            color: white;
             padding: 1rem;
             position: fixed;
             width: 100%;
@@ -27,38 +24,18 @@
             left: 0;
             z-index: 1000;
         }
-
         .navbar-container {
             max-width: 1200px;
             margin: 0 auto;
             display: flex;
             align-items: center;
-            justify-content: flex-start;
-            position:relative ;
-            right:130px ;
+            justify-content: space-between;
         }
-
-        /* Logo aligned to the far left */
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 600;
-            text-decoration: none;
-            color: white;
-            margin-right: 20px; /* Space between logo and navbar links */
-        }
-
-        /* Navbar Links start just after the logo */
         .navbar-links {
             list-style: none;
             display: flex;
             gap: 20px;
-            margin-left: 0;
         }
-
-        .navbar-links li {
-            display: inline;
-        }
-
         .navbar-links a {
             text-decoration: none;
             color: white;
@@ -66,117 +43,62 @@
             padding: 0.5rem;
             transition: background-color 0.3s ease;
         }
-        .Button{
-            background-color: red;
-            color: black;
-            cursor: pointer;
-            border-radius: 5px;
-            
-        }
-        .Button a:hover{
-            size: 20px ;
-            background-color: red;
-        }
-        
-
         .navbar-links a:hover {
             background-color: #374151;
             border-radius: 5px;
         }
-        
-        /* Mobile Menu */
-        .menu-toggle {
-            display: none;
-            font-size: 1.8rem;
-            background: none;
-            border: none;
+        .hero {
+            margin-top: 80px;
+            text-align: center;
+            padding: 50px;
+            background: #1E3A8A;
             color: white;
-            cursor: pointer;
-        }
-        
-        @media (max-width: 768px) {
-            .navbar-links {
-                display: none;
-                width: 100%;
-                flex-direction: column;
-                background-color: #1E3A8A;
-                position: absolute;
-                top: 60px;
-                left: 0;
-                padding: 1rem;
-                text-align: center;
-            }
-
-            .navbar-links.active {
-                display: flex;
-            }
-
-            .navbar-links li {
-                margin: 10px 0;
-            }
-
-            .menu-toggle {
-                display: block;
-            }
-        }
-        .page-image{
-            height: 10%;
-            width: 10%;
-            opacity: 0.6;
         }
     </style>
 </head>
 <body>
-
-    <!-- Navbar -->
     <nav>
         <div class="navbar-container">
-            <!-- Logo (Far left) -->
             <a href="#" class="logo">ResQ</a>
-
-            <!-- Navbar Links (Start just after the logo) -->
             <ul class="navbar-links">
-                <li><a href="/report">Submit a Report</a></li>
-                <li><a href="/map">View Danger Zones</a></li>
-                <li><a href="/map">Contact Us</a></li>
-                <li><a href="/map">About US</a></li>
-                    
-                <li class="Button"><button type="button" onclick="sendSOS()">Send SOS</button></li>
-                
-                
-                 
+                <li><a href="#" onclick="checkAuth(event, '/report')">Submit a Report</a></li>
+                <li><a href="#" onclick="checkAuth(event, '/map')">View Danger Zones</a></li>
+                <li><a href="#" onclick="checkAuth(event, '/contact')">Contact Us</a></li>
+                <li><a href="#" onclick="checkAuth(event, '/about')">About Us</a></li>
+                <li class="Button"><button type="button" onclick="checkAuth(event, '/sos')">Send SOS</button></li>
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                    <li><a href="{{ url_for('register') }}">Register</a></li>
+                {% endif %}
             </ul>
-
-            <!-- Mobile Menu Button -->
             <button class="menu-toggle" onclick="toggleMenu()">☰</button>
         </div>
     </nav>
-
     <div class="hero">
         <div class="container">
             <h1>Welcome to Disaster Report System</h1>
             <p>Report disasters and view danger zones in real-time.</p>
         </div>
     </div>
-
-    <div class="image-container">
-       <img src="x" alt="Descriptive Image" class="page-image">
-   </div>
-
-   
     <script>
+        function checkAuth(event, url) {
+            event.preventDefault();
+            if (!{{ current_user.is_authenticated|tojson }}) {
+                alert("Please login to use this feature.");
+                window.location.href = "{{ url_for('login') }}";
+            } else {
+                window.location.href = url;
+            }
+        }
         function toggleMenu() {
             const menu = document.querySelector('.navbar-links');
             menu.classList.toggle('active');
         }
-    </script>
-    <button type="button" onclick="sendSOS()">Send SOS</button>
-
-    <script>
         function sendSOS() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
-                    // Send location data via AJAX
                     fetch('/sos', {
                         method: 'POST',
                         headers: {
@@ -198,9 +120,5 @@
             }
         }
     </script>
-    
-
-    
-
 </body>
 </html>
