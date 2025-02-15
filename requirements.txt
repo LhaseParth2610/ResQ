@@ -1,0 +1,11 @@
+flask
+Flask
+gunicorn
+psycopg2-binary
+Flask-SQLAlchemy
+Flask-Login
+Flask-Mail
+spacy
+requests
+werkzeug
+gunicorn
