@@ -90,17 +90,19 @@ def extract_entities(text):
 
 @app.route('/')
 def home():
-    return redirect(url_for('index'))  # ✅ Shows main page after index
+    return redirect(url_for('index'))  # ✅ Shows main page after login
+
 @app.route('/index')
 def index():
-    return render_template('index.html')  
+    return render_template('index.html')  # ✅ Shows main page after login
 
-@app.route('/debug')
-def debug():
-    return jsonify({
-        "session": dict(session),  # ✅ Convert session to dictionary for viewing
-        "is_authenticated": current_user.is_authenticated  # ✅ Check if user is logged in
-    })
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -210,7 +212,7 @@ def sos():
 
     # Retrieve the user's email and send the message
     user_email = current_user.email
-    msg = Message('SOS Alert', sender="parthlhase49@gmail.com", recipients=['sohamwalimbe20@gmail.com'])
+    msg = Message('SOS Alert', sender="parthlhase49@gmail.com", recipients=['prajwalkumbhar2909@gmail.com'])
     msg.body = f'{predefined_message} \n\nUser: {current_user.username} ({user_email}) \nLocation: {user_location}'
 
     try:
