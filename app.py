@@ -90,11 +90,10 @@ def extract_entities(text):
 
 @app.route('/')
 def home():
-    return redirect(url_for('login'))  # ✅ Shows main page after login
-
+    return redirect(url_for('index'))  # ✅ Shows main page after index
 @app.route('/index')
 def index():
-    return render_template('index.html')  # ✅ Shows main page after login
+    return render_template('index.html')  
 
 @app.route('/debug')
 def debug():
