@@ -1,9 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
-<img src="{{ url_for('static', filename='images/login-bg.jpg') }}" alt="Login Background" width="400">
+
+<style>
+    body {
+        background-image: url("{{ url_for('static', filename='images/login-bg.jpg') }}");
+        background-size: cover;
+        background-position: center;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .login-container {
+        background: rgba(255, 255, 255, 0.8);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+</style>
 
 <div class="row justify-content-center">
-    <div class="col-md-6">
+    <div class="col-md-6 login-container">
         <h2 class="text-center mb-4">Login</h2>
         <form method="POST">
             <div class="form-group">
@@ -21,4 +38,5 @@
         </form>
     </div>
 </div>
+
 {% endblock %}
