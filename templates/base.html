@@ -29,7 +29,7 @@
 </head>
 <body>
 
-    {% if not current_user.is_authenticated and request.endpoint != 'login' %}
+    {% if not current_user.is_authenticated and request.endpoint not in ['login', 'register'] %}
         <script>
             window.location.href = "{{ url_for('login') }}";
         </script>
