@@ -4,24 +4,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danger Zones</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC46htxTZ4Tvpkv2Xob8oCKqZubIvsORkM"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+
         #map {
             width: 100%;
-            height: 500px;
+            height: 80vh;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
         .legend {
             background: white;
-            padding: 10px;
+            padding: 15px;
             margin: 10px;
             border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .legend h4 {
+            margin: 0 0 10px;
+            font-size: 16px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 50%;
+        }
+
+        .info-window {
+            max-width: 300px;
+        }
+
+        .carousel-item img {
+            border-radius: 8px;
+            max-height: 320px; /* Increased height */
+            object-fit: cover;
         }
     </style>
+    <script src="https://maps.googleapis.com/maps/api/js?key=yOUR_API&libraries=visualization"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
+        let map, heatmap;
+
         function initMap(userLat, userLng) {
-            var map = new google.maps.Map(document.getElementById("map"), {
+            map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 12,
-                center: { lat: userLat, lng: userLng }
+                center: { lat: userLat, lng: userLng },
+                mapTypeControl: false,
+                streetViewControl: false
             });
 
             // Mark user's location
@@ -36,14 +88,83 @@
             fetch("/danger_zones")
                 .then(response => response.json())
                 .then(data => {
+                    // Create heatmap data
+                    const heatmapData = data.map(zone => ({
+                        location: new google.maps.LatLng(zone.latitude, zone.longitude),
+                        weight: zone.report_count
+                    }));
+
+                    // Configure heatmap
+                    heatmap = new google.maps.visualization.HeatmapLayer({
+                        data: heatmapData,
+                        map: map,
+                        gradient: [
+                            'rgba(0, 255, 0, 0)',
+                            'rgba(0, 255, 0, 0.5)',
+                            'rgba(255, 255, 0, 0.7)',
+                            'rgba(255, 165, 0, 0.8)',
+                            'rgba(255, 0, 0, 1)',
+                             // Added more gradients
+                        ],
+                        radius: 35,
+                        opacity: 0.8
+                    });
+
+                    // Create markers
                     data.forEach(zone => {
                         if (zone.latitude && zone.longitude) {
-                            // Use red for danger zones
-                            new google.maps.Marker({
+                            const marker = new google.maps.Marker({
                                 position: { lat: zone.latitude, lng: zone.longitude },
                                 map: map,
                                 title: `${zone.location} - Reports: ${zone.report_count}`,
-                                icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                                icon: {
+                                    url: "{{ url_for('static', filename='custom-icon.png') }}",
+                                    scaledSize: new google.maps.Size(100, 100),
+                                    anchor: new google.maps.Point(20, 20)
+                                },
+                                opacity: 0
+                            });
+
+                            // Add click listener for images
+                            marker.addListener('click', () => {
+                                fetch(`/images/${encodeURIComponent(zone.location)}`)
+                                    .then(response => response.json())
+                                    .then(images => {
+                                        const carouselItems = images.map((img, index) => `
+                                            <div class="carousel-item ${index === 0 ? 'active' : ''}">
+                                                <img src="data:image/jpeg;base64,${img}" class="d-block w-100" alt="Disaster Image">
+                                            </div>
+                                        `).join('');
+
+                                        const content = `
+                                            <div id="carousel-${zone.id}" class="carousel slide" data-ride="carousel">
+                                                <div class="carousel-inner">
+                                                    ${carouselItems}
+                                                </div>
+                                                ${images.length > 1 ? `
+                                                    <a class="carousel-control-prev" href="#carousel-${zone.id}" role="button" data-slide="prev">
+                                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                                        <span class="sr-only">Previous</span>
+                                                    </a>
+                                                    <a class="carousel-control-next" href="#carousel-${zone.id}" role="button" data-slide="next">
+                                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                                        <span class="sr-only">Next</span>
+                                                    </a>
+                                                ` : ''}
+                                            </div>
+                                        `;
+
+                                        const infoWindow = new google.maps.InfoWindow({
+                                            content: `<div class="info-window">${content}</div>`
+                                        });
+                                        
+                                        infoWindow.open(map, marker);
+                                        
+                                        // Initialize carousel after info window opens
+                                        google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
+                                            $(`#carousel-${zone.id}`).carousel();
+                                        });
+                                    });
                             });
                         }
                     });
@@ -54,9 +175,19 @@
             const legend = document.createElement("div");
             legend.className = "legend";
             legend.innerHTML = `
-                <h4>Legend</h4>
-                <p><img src="http://maps.google.com/mapfiles/ms/icons/blue-dot.png"> Your Location</p>
-                <p><img src="http://maps.google.com/mapfiles/ms/icons/red-dot.png"> Danger Zone</p>
+                <h4>Map Legend</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4285F4"></div>
+                    <span>Your Location</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FF0000"></div>
+                    <span>Danger Zones</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: linear-gradient(to right, #00ff00, #ff0000)"></div>
+                    <span>Danger Intensity</span>
+                </div>
             `;
             map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(legend);
         }
@@ -64,25 +195,27 @@
         function getUserLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        var userLat = position.coords.latitude;
-                        var userLng = position.coords.longitude;
+                    position => {
+                        const userLat = position.coords.latitude;
+                        const userLng = position.coords.longitude;
                         initMap(userLat, userLng);
-                    }, 
-                    function(error) {
+                    },
+                    error => {
+                        console.error("Geolocation error:", error);
                         alert("Location access denied. Defaulting to Mumbai.");
                         initMap(19.0760, 72.8777);
-                    }
+                    },
+                    { enableHighAccuracy: true }
                 );
             } else {
-                alert("Geolocation is not supported by this browser.");
+                alert("Geolocation not supported");
                 initMap(19.0760, 72.8777);
             }
         }
     </script>
 </head>
 <body onload="getUserLocation()">
-    <h1>Danger Zones Near You</h1>
+    <h1 class="text-center mb-4">Danger Zones Near You</h1>
     <div id="map"></div>
 </body>
 </html>
