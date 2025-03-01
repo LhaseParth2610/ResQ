@@ -2,7 +2,7 @@ import requests
 from flask_mail import Message
 
 # Store API key (Replace with your actual API key)
-apikey = "AIzaSyC46htxTZ4Tvpkv2Xob8oCKqZubIvsORkM"
+apikey = "Your_api_key"
 
 def get_coordinates(location_name):
     url = "https://maps.googleapis.com/maps/api/geocode/json"
