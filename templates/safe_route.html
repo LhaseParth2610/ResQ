@@ -1,1 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Safe Route Finder</title>
+  
+  <!-- Preconnect for faster Google Fonts loading -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <style>
+    #map {
+      height: 85vh;
+      width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    #directions-panel {
+      height: 85vh;
+      overflow-y: auto;
+      padding: 15px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .controls-container {
+      background-color: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+    }
+    .error-message {
+      background-color: #FEE2E2;
+      color: #DC2626;
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      display: none;
+    }
+    .success-message {
+      background-color: #D1FAE5;
+      color: #059669;
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      display: none;
+    }
+    .custom-map-control-button {
+      background-color: #fff;
+      border: 0;
+      border-radius: 2px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      margin: 10px;
+      padding: 0 0.5em;
+      font: 400 18px Roboto, Arial, sans-serif;
+      overflow: hidden;
+      height: 40px;
+      cursor: pointer;
+    }
+    .custom-map-control-button:hover {
+      background: #ebebeb;
+    }
+  </style>
+  
+  <!-- Google Maps API loaded without callback, with loading attributes -->
+  <script 
+    src="https://maps.googleapis.com/maps/api/js?key=yOUR_API&libraries=places,geometry,drawing" 
+    loading="async" 
+    fetchpriority="high" 
+    async 
+    defer>
+  </script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="container mx-auto px-4 py-6">
+    <div class="controls-container">
+      <h2 class="text-2xl font-bold mb-4 text-gray-800">Safe Route Finder</h2>
+      
+      <div id="errorMessage" class="error-message"></div>
+      <div id="successMessage" class="success-message"></div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <!-- Starting Point Input -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Starting Point</label>
+          <div class="flex space-x-2">
+            <input type="text" id="start" 
+                   class="flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-500" 
+                   placeholder="Enter starting point">
+            <button onclick="useCurrentLocation()" 
+                    class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-150">
+              📍 Current
+            </button>
+          </div>
+        </div>
+
+        <!-- Destination Input -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Destination</label>
+          <input type="text" id="destination" 
+                 class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" 
+                 placeholder="Enter destination">
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center">
+        <button onclick="calculateSafeRoute()" 
+                class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 transition duration-150">
+          Find Safe Route
+        </button>
+        <div class="flex items-center space-x-4">
+          <!-- Although the checkbox remains for UI, it's no longer used in the directions request -->
+          <label class="flex items-center">
+            <input type="checkbox" id="avoidTraffic" class="mr-2">
+            <span class="text-sm text-gray-700">Avoid Traffic</span>
+          </label>
+          <select id="travelMode" class="p-2 border rounded text-sm">
+            <option value="DRIVING">🚗 Driving</option>
+            <option value="WALKING">🚶 Walking</option>
+            <option value="BICYCLING">🚲 Bicycling</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2">
+        <div id="map"></div>
+      </div>
+      <div>
+        <div id="directions-panel"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let map, directionsService, directionsRenderer, userMarker;
+    let disasterZones = [];
+    let dangerZonePolygons = [];
+    let startAutocomplete, destAutocomplete;
+
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 5000);
+    }
+
+    function showSuccess(message) {
+      const successDiv = document.getElementById('successMessage');
+      successDiv.textContent = message;
+      successDiv.style.display = 'block';
+      setTimeout(() => {
+        successDiv.style.display = 'none';
+      }, 5000);
+    }
+
+    function initMap() {
+      try {
+        // Initialize map
+        map = new google.maps.Map(document.getElementById("map"), {
+          zoom: 14,
+          center: { lat: 18.528756, lng: 73.864157 },
+          mapTypeControl: true,
+          fullscreenControl: true,
+          streetViewControl: true,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
+
+        // Initialize services
+        directionsService = new google.maps.DirectionsService();
+        directionsRenderer = new google.maps.DirectionsRenderer({
+          map: map,
+          panel: document.getElementById("directions-panel"),
+          draggable: true
+        });
+
+        // Initialize autocomplete for start and destination fields
+        startAutocomplete = new google.maps.places.Autocomplete(
+          document.getElementById("start"),
+          { types: ['geocode'] }
+        );
+        destAutocomplete = new google.maps.places.Autocomplete(
+          document.getElementById("destination"),
+          { types: ['geocode'] }
+        );
+
+        startAutocomplete.bindTo('bounds', map);
+        destAutocomplete.bindTo('bounds', map);
+
+        // Load danger zones and initialize location tracking
+        fetchDangerZones();
+        initializeLocationTracking();
+
+        // Automatically use current location if start field is empty
+        if (!document.getElementById("start").value) {
+          useCurrentLocation();
+        }
+
+        showSuccess("Map initialized successfully");
+      } catch (error) {
+        console.error("Map initialization error:", error);
+        showError("Error initializing map. Please refresh the page.");
+      }
+    }
+
+    // Initialize map once the window loads
+    window.addEventListener('load', initMap);
+
+    function initializeLocationTracking() {
+      if (navigator.geolocation) {
+        // Create a custom button for panning to current location
+        const locationButton = document.createElement("button");
+        locationButton.classList.add("custom-map-control-button");
+        locationButton.textContent = "Pan to Current Location";
+        map.controls[google.maps.ControlPosition.TOP_RIGHT].push(locationButton);
+
+        locationButton.addEventListener("click", () => {
+          useCurrentLocation();
+        });
+      }
+    }
+
+    function useCurrentLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+            updateUserLocation(pos.lat, pos.lng);
+            
+            // Reverse geocode to get address for the starting point
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ location: pos }, (results, status) => {
+              if (status === "OK" && results[0]) {
+                document.getElementById("start").value = results[0].formatted_address;
+              } else {
+                // Fallback: use lat,lng string if reverse geocode fails
+                document.getElementById("start").value = pos.lat + ", " + pos.lng;
+              }
+            });
+          },
+          () => {
+            handleLocationError(true, map.getCenter());
+          }
+        );
+      } else {
+        handleLocationError(false, map.getCenter());
+      }
+    }
+
+    // Simple error handler for geolocation
+    function handleLocationError(browserHasGeolocation, pos) {
+      showError(browserHasGeolocation 
+        ? "Error: The Geolocation service failed." 
+        : "Error: Your browser doesn't support geolocation.");
+      map.setCenter(pos);
+    }
+
+    function fetchDangerZones() {
+      fetch("/danger_zones")
+        .then((response) => response.json())
+        .then((data) => {
+          disasterZones = data;
+          highlightDangerZones();
+        })
+        .catch((error) => console.error("Error loading danger zones:", error));
+    }
+
+    function highlightDangerZones() {
+      disasterZones.forEach((zone) => {
+        const circle = new google.maps.Circle({
+          center: { lat: zone.latitude, lng: zone.longitude },
+          radius: 300, // Adjust danger radius as needed
+          strokeColor: "#FF0000",
+          strokeOpacity: 1.0,
+          strokeWeight: 2,
+          fillColor: "#FF0000",
+          fillOpacity: 0.35,
+          map: map,
+        });
+        dangerZonePolygons.push(circle);
+      });
+    }
+
+    function updateUserLocation(lat, lng) {
+      const userLocation = { lat, lng };
+      if (!userMarker) {
+        if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
+          const { AdvancedMarkerElement } = google.maps.marker;
+          userMarker = new AdvancedMarkerElement({
+            map: map,
+            position: userLocation,
+            title: "Your Location"
+          });
+        } else {
+          console.warn("AdvancedMarkerElement not available; falling back to google.maps.Marker");
+          userMarker = new google.maps.Marker({
+            position: userLocation,
+            map: map,
+            title: "Your Location",
+            icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+          });
+        }
+      } else {
+        userMarker.setPosition(userLocation);
+      }
+      map.setCenter(userLocation);
+    }
+
+    async function calculateSafeRoute() {
+      const start = document.getElementById("start").value;
+      const destination = document.getElementById("destination").value;
+
+      if (!start || !destination) {
+        showError("Please enter both starting point and destination");
+        return;
+      }
+
+      try {
+        const travelMode = document.getElementById("travelMode").value;
+        // Removed avoidTraffic since it's not a valid parameter
+        const directionsResult = await getRoutes(start, destination, {
+          travelMode: google.maps.TravelMode[travelMode]
+        });
+        const routes = directionsResult.routes;
+
+        if (!routes || routes.length === 0) {
+          showError("No routes found between these locations");
+          return;
+        }
+
+        const safeRoutes = filterSafeRoutes(routes);
+        let chosenRoute, routeIndex;
+        if (safeRoutes.length > 0) {
+          chosenRoute = getSafestRoute(safeRoutes);
+          routeIndex = routes.indexOf(chosenRoute);
+          showSuccess("Safe route found!");
+          showRouteSafetyInfo(chosenRoute);
+        } else {
+          showError("No completely safe routes found. Showing alternative route.");
+          chosenRoute = routes[0];
+          routeIndex = 0;
+          showRouteSafetyInfo(routes[0], true);
+        }
+        // Use the complete directions result and set the chosen route by index
+        directionsRenderer.setDirections(directionsResult);
+        directionsRenderer.setRouteIndex(routeIndex);
+      } catch (error) {
+        console.error("Route calculation error:", error);
+        showError("Error calculating route. Please try again.");
+      }
+    }
+
+    async function getRoutes(origin, destination, options) {
+      return new Promise((resolve, reject) => {
+        directionsService.route(
+          {
+            origin,
+            destination,
+            travelMode: options.travelMode,
+            provideRouteAlternatives: true,
+          },
+          (result, status) => {
+            if (status === google.maps.DirectionsStatus.OK) {
+              resolve(result);
+            } else {
+              reject(status);
+            }
+          }
+        );
+      });
+    }
+
+    function filterSafeRoutes(routes) {
+      return routes.filter((route) => !routeIntersectsDangerZone(route));
+    }
+
+    function routeIntersectsDangerZone(route) {
+      return route.legs.some((leg) =>
+        leg.steps.some((step) =>
+          step.path.some((point) =>
+            dangerZonePolygons.some((polygon) =>
+              google.maps.geometry.spherical.computeDistanceBetween(
+                new google.maps.LatLng(point.lat(), point.lng()),
+                polygon.getCenter()
+              ) < polygon.getRadius()
+            )
+          )
+        )
+      );
+    }
+
+    function getSafestRoute(routes) {
+      return routes.reduce((safest, route) => {
+        const currentScore = calculateRouteSafetyScore(route);
+        return currentScore < calculateRouteSafetyScore(safest) ? route : safest;
+      });
+    }
+
+    function calculateRouteSafetyScore(route) {
+      return route.legs.reduce(
+        (score, leg) =>
+          score +
+          leg.steps.reduce(
+            (stepScore, step) =>
+              stepScore +
+              step.path.filter((point) =>
+                dangerZonePolygons.some((polygon) =>
+                  google.maps.geometry.spherical.computeDistanceBetween(
+                    new google.maps.LatLng(point.lat(), point.lng()),
+                    polygon.getCenter()
+                  ) < polygon.getRadius()
+                )
+              ).length,
+            0
+          ),
+        0
+      );
+    }
+
+    function showRouteSafetyInfo(route, hasWarning = false) {
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'bg-white p-4 mt-4 rounded shadow';
+      infoDiv.innerHTML = `
+        <h3 class="font-bold ${hasWarning ? 'text-red-600' : 'text-green-600'}">
+          ${hasWarning ? '⚠️ Route Warning' : '✅ Safe Route Found'}
+        </h3>
+        <p>Distance: ${route.legs[0].distance.text}</p>
+        <p>Duration: ${route.legs[0].duration.text}</p>
+        ${hasWarning ? '<p class="text-red-600">This route passes near danger zones.</p>' : ''}
+      `;
+      document.getElementById('directions-panel').prepend(infoDiv);
+    }
+  </script>
+</body>
+</html>
 
