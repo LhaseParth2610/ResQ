@@ -3,6 +3,7 @@
 ## **Overview**
 ResQ is a cutting-edge, real-time disaster management platform that connects communities with emergency response services. By enabling instant disaster reporting and crowd-sourced danger zone mapping, ResQ delivers critical information to authorities instantly—enhancing response efficiency and saving lives.
 
+
 ![ResQ Platform Overview](https://github.com/user-attachments/assets/423d3b63-6b38-4532-b1b4-2238f9f97e6b)
 
 ---
@@ -10,15 +11,20 @@ ResQ is a cutting-edge, real-time disaster management platform that connects com
 ## **Features**
 
 ### **User Features**
-- **Instant Disaster Reporting**: Users can report incidents like floods, earthquakes, and fires in real time via an intuitive interface, providing vital on-the-ground data.  
+- **Instant Disaster Reporting**: Users can report incidents like floods, earthquakes, and fires in real time via an intuitive interface, providing vital on-the-ground data.
+
+
   ![Disaster Reporting Interface](https://github.com/user-attachments/assets/ca92dd4c-12e1-47e2-bedb-b8561bc2fc6f)
 
-- **Crowd-Sourced Danger Zones**: Visual mapping of high-risk areas enhances situational awareness for both users and authorities. This feature identifies emerging hazards, enabling proactive disaster management and evacuation planning.  
+- **Crowd-Sourced Danger Zones**: Visual mapping of high-risk areas enhances situational awareness for both users and authorities. This feature identifies emerging hazards, enabling proactive disaster management and evacuation planning.
+  
   ![Danger Zone Map](https://github.com/user-attachments/assets/aec4199a-f9e6-449a-a0b0-6d7cb08a47fa)
 
 - **Rapid Alerts**: SOS and broadcast messaging deliver urgent notifications. SOS messages include user details—name, emergency contact number, and precise location (longitude/latitude)—sent directly to authorities for immediate action.
 
-- **Safe Routes**: Dynamically maps secure evacuation paths away from danger zones, guiding users to safety during emergencies. Updates in real time to reflect changing conditions on the ground.  
+- **Safe Routes**: Dynamically maps secure evacuation paths away from danger zones, guiding users to safety during emergencies. Updates in real time to reflect changing conditions on the ground.
+
+  
   ![Safe Routes Feature](https://github.com/user-attachments/assets/46c307e9-31c6-4ae6-b255-c6a06d5363b0)
 
 ### **Authority Features**
@@ -29,8 +35,11 @@ Tailored tools for emergency responders and government agencies to enhance disas
 - Manage resources efficiently with real-time tracking and analytics for personnel, equipment, and supplies.  
 - Navigate response teams safely with dynamically updated *Safe Routes* that avoid danger zones.  
 - Leverage data analytics and reporting for post-disaster analysis, risk assessment, and long-term planning.  
-- Integrate with national and local disaster management systems for seamless collaboration and compliance.  
-  ![Authority Dashboard 1](https://github.com/user-attachments/assets/9517da5a-6151-44ef-825d-fa1a55e53559)  
+- Integrate with national and local disaster management systems for seamless collaboration and compliance.
+-  
+  ![Authority Dashboard 1](https://github.com/user-attachments/assets/9517da5a-6151-44ef-825d-fa1a55e53559)
+
+ 
   ![Authority Dashboard 2](https://github.com/user-attachments/assets/1221bb7d-b4ea-4961-bcd3-6ed6ffea3a94)
 
 ### **Role-Based Efficiency**
