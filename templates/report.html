@@ -4,20 +4,549 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submit Disaster Report</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css">
+    <style>
+        :root {
+            --primary-red: #dc3545;
+            --dark-red: #c82333;
+            --light-gray: #f8f9fa;
+            --medium-gray: #e9ecef;
+            --text-dark: #495057;
+            --text-light: #6c757d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--light-gray) 0%, var(--medium-gray) 100%);
+            min-height: 100vh;
+        }
+
+        .report-container {
+            padding: 3rem 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .report-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .report-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .report-header h1 {
+            color: var(--primary-red);
+            font-size: 2.2rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .report-header p {
+            color: var(--text-light);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .report-form {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.8rem;
+        }
+
+        .input-label {
+            display: block;
+            color: var(--text-dark);
+            font-weight: 500;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .input-label i {
+            color: var(--primary-red);
+            font-size: 1.2rem;
+        }
+
+        .form-textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 1.5rem;
+            border: 2px solid var(--medium-gray);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .form-textarea:focus {
+            border-color: var(--primary-red);
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+            outline: none;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1.2rem;
+            border: 2px solid var(--medium-gray);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary-red);
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+            outline: none;
+        }
+
+        .input-hint {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: block;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, var(--primary-red) 0%, var(--dark-red) 100%);
+            color: white;
+            padding: 1.2rem 2.5rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .submit-btn::after {
+            content: "";
+            position: absolute;
+            background: rgba(255, 255, 255, 0.2);
+            width: 40px;
+            height: 100%;
+            left: -60px;
+            top: 0;
+            transform: skewX(-15deg);
+            transition: left 0.3s;
+        }
+
+        .submit-btn:hover::after {
+            left: 110%;
+        }
+
+        @media (max-width: 768px) {
+            .report-container {
+                padding: 2rem 1rem;
+            }
+            
+            .report-card {
+                padding: 1.8rem;
+            }
+            
+            .report-header h1 {
+                font-size: 1.8rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .form-textarea {
+                padding: 1rem;
+            }
+        }
+
+        /* Animation */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .report-card {
+            animation: slideIn 0.6s ease-out;
+        }
+
+        /* Camera functionality additions */
+        .camera-options {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .camera-btn {
+            background-color: var(--primary-red);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.7rem 1.2rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .camera-btn:hover {
+            background-color: var(--dark-red);
+            transform: translateY(-2px);
+        }
+
+        #camera-container {
+            margin-top: 1rem;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #camera-view {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #captured-image {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 12px;
+            display: none;
+            margin-top: 1rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .control-btn {
+            background-color: var(--text-dark);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background-color: var(--primary-red);
+            transform: scale(1.1);
+        }
+
+        .control-btn.capture {
+            background-color: var(--primary-red);
+        }
+
+        .control-btn.capture:hover {
+            background-color: var(--dark-red);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Submit Your Disaster Report</h1>
-        <form method="POST" action="/report">
-            <label for="description">Report Description:</label>
-            <textarea id="description" name="description" rows="5" placeholder="Describe the disaster..." required></textarea>
-            
-            <label for="location">Location (optional):</label>
-            <input type="text" id="location" name="location" placeholder="Enter location details">
-            
-            <button type="submit" class="btn">Submit Report</button>
-        </form>
+    <div class="report-container">
+        <div class="report-card" data-aos="zoom-in">
+            <div class="report-header">
+                <h1>
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Submit Disaster Report
+                </h1>
+                <p>Help emergency services respond faster by providing accurate information</p>
+            </div>
+
+            <form method="POST" action="/report" class="report-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="description" class="input-label">
+                        <i class="fas fa-comment-medical"></i>
+                        Incident Description
+                    </label>
+                    <textarea 
+                        id="description" 
+                        name="description" 
+                        class="form-textarea" 
+                        placeholder="Describe the disaster type, severity, and any immediate dangers..."
+                        required
+                    ></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="location" class="input-label">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Location Details
+                    </label>
+                    <input 
+                        type="text" 
+                        id="location" 
+                        name="location" 
+                        class="form-input"
+                        placeholder="Enter exact location or landmark..."
+                    >
+                    <span class="input-hint">We'll automatically detect location if not provided</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="image" class="input-label">
+                        <i class="fas fa-camera"></i>
+                        Upload Image
+                    </label>
+                    <!-- Hidden file input that will be used to store the captured image -->
+                    <input 
+                        type="file" 
+                        id="image" 
+                        name="image" 
+                        class="form-input"
+                        accept="image/*"
+                        style="display: none"
+                    >
+                    
+                    <!-- Camera options -->
+                    <div class="camera-options">
+                        <button type="button" class="camera-btn" id="open-camera">
+                            <i class="fas fa-camera"></i> Take Photo
+                        </button>
+                        <div class="file-input-wrapper">
+                            <button type="button" class="camera-btn">
+                                <i class="fas fa-upload"></i> Upload File
+                            </button>
+                            <input 
+                                type="file" 
+                                id="file-upload" 
+                                accept="image/*"
+                                onchange="handleFileUpload(this)"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Camera container -->
+                    <div id="camera-container">
+                        <video id="camera-view" autoplay playsinline></video>
+                        <img id="captured-image" alt="Captured image">
+                        <div class="camera-controls">
+                            <button type="button" class="control-btn capture" id="capture-btn">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                            <button type="button" class="control-btn" id="retry-btn" style="display: none;">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                            <button type="button" class="control-btn" id="use-photo-btn" style="display: none;">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button type="button" class="control-btn" id="close-camera-btn">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Preview of selected or captured image -->
+                    <div id="image-preview" style="display: none; margin-top: 1rem; text-align: center;">
+                        <img id="preview-img" src="" alt="Image preview" style="max-width: 100%; max-height: 300px; border-radius: 10px;">
+                        <button type="button" class="camera-btn" id="remove-image" style="margin-top: 0.5rem;">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-paper-plane"></i>
+                    Submit Emergency Report
+                </button>
+            </form>
+        </div>
     </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 800,
+            once: true
+        });
+
+        // Camera functionality
+        const openCameraBtn = document.getElementById('open-camera');
+        const cameraContainer = document.getElementById('camera-container');
+        const cameraView = document.getElementById('camera-view');
+        const capturedImage = document.getElementById('captured-image');
+        const captureBtn = document.getElementById('capture-btn');
+        const retryBtn = document.getElementById('retry-btn');
+        const usePhotoBtn = document.getElementById('use-photo-btn');
+        const closeCameraBtn = document.getElementById('close-camera-btn');
+        const imageInput = document.getElementById('image');
+        const imagePreview = document.getElementById('image-preview');
+        const previewImg = document.getElementById('preview-img');
+        const removeImageBtn = document.getElementById('remove-image');
+        
+        let stream;
+        let imageCapture;
+        
+        // Open camera
+        openCameraBtn.addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' },
+                    audio: false 
+                });
+                cameraView.srcObject = stream;
+                cameraContainer.style.display = 'flex';
+                
+                const track = stream.getVideoTracks()[0];
+                imageCapture = new ImageCapture(track);
+            } catch (error) {
+                alert('Error accessing camera: ' + error.message);
+                console.error('Error accessing camera:', error);
+            }
+        });
+        
+        // Capture photo
+        captureBtn.addEventListener('click', async () => {
+            try {
+                const blob = await imageCapture.takePhoto();
+                capturedImage.src = URL.createObjectURL(blob);
+                capturedImage.style.display = 'block';
+                cameraView.style.display = 'none';
+                
+                captureBtn.style.display = 'none';
+                retryBtn.style.display = 'inline-flex';
+                usePhotoBtn.style.display = 'inline-flex';
+                
+                // Store blob for later use
+                window.capturedBlob = blob;
+            } catch (error) {
+                console.error('Error capturing photo:', error);
+            }
+        });
+        
+        // Retry photo
+        retryBtn.addEventListener('click', () => {
+            capturedImage.style.display = 'none';
+            cameraView.style.display = 'block';
+            
+            captureBtn.style.display = 'inline-flex';
+            retryBtn.style.display = 'none';
+            usePhotoBtn.style.display = 'none';
+        });
+        
+        // Use photo
+        usePhotoBtn.addEventListener('click', () => {
+            // Convert blob to File and set to the file input
+            const file = new File([window.capturedBlob], "captured-image.jpg", { type: "image/jpeg" });
+            
+            // Create a FileList-like object
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            imageInput.files = dataTransfer.files;
+            
+            // Show in the preview
+            previewImg.src = URL.createObjectURL(file);
+            imagePreview.style.display = 'block';
+            
+            // Close camera
+            closeCamera();
+        });
+        
+        // Close camera
+        closeCameraBtn.addEventListener('click', closeCamera);
+        
+        function closeCamera() {
+            cameraContainer.style.display = 'none';
+            
+            // Reset camera UI
+            capturedImage.style.display = 'none';
+            cameraView.style.display = 'block';
+            captureBtn.style.display = 'inline-flex';
+            retryBtn.style.display = 'none';
+            usePhotoBtn.style.display = 'none';
+            
+            // Stop all tracks
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        }
+        
+        // Handle file upload
+        function handleFileUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // Copy to the main image input
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                imageInput.files = dataTransfer.files;
+                
+                // Show preview
+                previewImg.src = URL.createObjectURL(file);
+                imagePreview.style.display = 'block';
+            }
+        }
+        
+        // Remove image
+        removeImageBtn.addEventListener('click', () => {
+            imageInput.value = '';
+            imagePreview.style.display = 'none';
+            previewImg.src = '';
+        });
+    </script>
 </body>
 </html>
