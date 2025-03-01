@@ -65,21 +65,13 @@ ResQ transforms disaster response with a streamlined, real-time process:
 
 ## **Technical Details**
 - **Backend**: Flask  
-- **Database**: PostgreSQL  
-- **Mapping**: Google Maps API  
+- **Database**: PostgreSQL (via `psycopg2`)   
+- **Mapping**: Google Maps API (for mapping functionality)
 - **UI Design**: Professional, accessible, and user-friendly, built with Tailwind CSS, HTML, and JavaScript for secure authentication and a consistent theme.
+- **Dependencies**: Install  libraries as specified in `requirements.txt`
 
 ---
 
-## **Dependencies**
-To run ResQ, ensure the following dependencies are installed (listed in `requirements.txt`):  
-- Flask  
-- PostgreSQL (via `psycopg2`)  
-- Google Maps API (for mapping functionality)  
-- Tailwind CSS (for UI design, integrated via HTML/CSS)  
-- Other Python libraries as specified in `requirements.txt`
-
----
 
 ## **Installation & Setup**
 
