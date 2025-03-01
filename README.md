@@ -7,7 +7,17 @@ Features
 Instant Disaster Reporting: Users can report incidents like floods, earthquakes, and fires in real time. 
 ![Image](https://github.com/user-attachments/assets/ca92dd4c-12e1-47e2-bedb-b8561bc2fc6f)
 
-Crowd-Sourced Danger Zones: Visual mapping of high-risk areas to improve situational awareness. 
+Crowd-Sourced Danger Zones:
+Visual mapping of high-risk areas to improve situational awareness.
+helps both users and authorities get insights on the actual on ground situation also helps in identifying emerging hazards, enabling proactive disaster management and evacuation planning.
+
+
+
+
+
+
+
+
 
 Rapid alerts via SOS and broadcast messaging.
 
