@@ -3,128 +3,842 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Disaster Report System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <title>ResQ - Disaster Management</title>
+    <!-- Bodoni Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:wght@400;500;700&display=swap" rel="stylesheet" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" />
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
     <style>
+        /* Custom styles that extend Tailwind */
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 0;
+            font-family: 'Bodoni Moda', serif;
+            scroll-behavior: smooth;
         }
-        nav {
-            background-color: #1E3A8A;
-            color: white;
-            padding: 1rem;
-            position: fixed;
+        
+        .hero-bg {
+            height: 100vh;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        
+        .service-card {
+            transition: all 0.3s ease;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .notice-pin {
+            transform: rotate(10deg);
+            transition: transform 0.3s ease;
+        }
+        
+        .notice-item:hover .notice-pin {
+            transform: rotate(0deg);
+        }
+        
+        .announcement-ticker {
+            animation: ticker 20s linear infinite;
+        }
+        
+        @keyframes ticker {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        
+        .navbar-link {
+            position: relative;
+        }
+        
+        .navbar-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background-color: #1976d2;
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+        
+        .navbar-link:hover::after {
             width: 100%;
-            top: 0;
-            left: 0;
-            z-index: 1000;
         }
-        .navbar-container {
-            max-width: 1200px;
-            margin: 0 auto;
+        
+        .shadow-hover:hover {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .notice-board {
+            background-image: url('https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=800&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+/* Slideshow Styles */
+.slideshow {
+    position: relative;
+    width: 100%;
+    height: 100vh; /* Full viewport height, adjust as needed */
+}
+
+.slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 1s ease-in-out; /* Smooth fade-in effect */
+    z-index: 1; /* Ensure slides are below the overlay but can show text */
+}
+
+.slide .container {
+    position: relative;
+    z-index: 2; /* Ensure text and buttons are above the background and overlay */
+}
+
+.active {
+    opacity: 1;
+}
+
+.absolute {
+    position: absolute;
+}
+
+.bg-black.opacity-40 {
+    background-color: black;
+    opacity: 0.4;
+    z-index: 1; /* Below the text but above the background image */
+}
+
+/* SVG wave at the bottom (optional, keep below text) */
+.slideshow > .absolute.bottom-0 {
+    z-index: 1; /* Wave below slides, overlay, and text */
+}
+
+        /* FAQ Styles */
+        .faq-section {
+            background-color: #f9fafb;
+            padding: 4rem 2rem;
+        }
+        .faq-item {
+            background-color: white;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .faq-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        .faq-question {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            background-color: #e5e7eb;
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
         }
-        .navbar-links {
-            list-style: none;
-            display: flex;
-            gap: 20px;
+        .faq-answer {
+            padding: 1rem 1.5rem;
+            display: none;
+            background-color: #f3f4f6;
         }
-        .navbar-links a {
-            text-decoration: none;
-            color: white;
-            font-weight: 500;
-            padding: 0.5rem;
-            transition: background-color 0.3s ease;
+        .faq-answer.active {
+            display: block;
         }
-        .navbar-links a:hover {
-            background-color: #374151;
-            border-radius: 5px;
+        .faq-toggle {
+            transition: transform 0.3s ease;
         }
-        .hero {
-            margin-top: 80px;
-            text-align: center;
-            padding: 50px;
-            background: #1E3A8A;
-            color: white;
+        .faq-toggle.rotate {
+            transform: rotate(180deg);
         }
     </style>
-</head>
-<body>
-    <nav>
-        <div class="navbar-container">
-            <a href="#" class="logo">ResQ</a>
-            <ul class="navbar-links">
-                <li><a href="#" onclick="checkAuth(event, '/report')">Submit a Report</a></li>
-                <li><a href="#" onclick="checkAuth(event, '/map')">View Danger Zones</a></li>
-                <li><a href="#" onclick="checkAuth(event, '/contact')">Contact Us</a></li>
-                <li><a href="#" onclick="checkAuth(event, '/about')">About Us</a></li>
-                <li class="Button"><button type="button" onclick="checkAuth(event, '/sos')">Send SOS</button></li>
-                {% if current_user.is_authenticated %}
-                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
-                {% else %}
-                    <li><a href="{{ url_for('login') }}">Login</a></li>
-                    <li><a href="{{ url_for('register') }}">Register</a></li>
-                {% endif %}
-            </ul>
-            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
-        </div>
-    </nav>
-    <div class="hero">
-        <div class="container">
-            <h1>Welcome to Disaster Report System</h1>
-            <p>Report disasters and view danger zones in real-time.</p>
-        </div>
-    </div>
     <script>
         function checkAuth(event, url) {
+            event.preventDefault();
+            var isAuthenticated = JSON.parse('{{ current_user.is_authenticated | tojson }}' || 'false');
+            var role = '{{ current_user.role | default("") }}';  // Use default empty string if role is None
+            console.log('checkAuth called - User authenticated:', isAuthenticated, 'Role:', role, 'URL:', url, 'Event:', event.target);
+            var isAuthority = role === 'authority';
+            if (!isAuthenticated) {
+                console.log('Redirecting to login due to unauthenticated user');
+                alert("Please login to use this function.");
+                window.location.href = "{{ url_for('login') }}";
+            } else if (url === '{{ url_for('authority_dashboard') }}' && !isAuthority) {
+                console.log('Redirecting to index due to non-authority role');
+                alert("Access denied. Authority role required.");
+                window.location.href = "{{ url_for('index') }}";
+            } else {
+                console.log('Navigating to:', url);
+                window.location.href = url;
+            }
+        }
+    </script>
+</head>
+<body class="bg-white text-gray-800 overflow-x-hidden">
+    <!-- NAVIGATION BAR -->
+    <nav class="fixed top-0 left-0 w-full bg-white shadow-md z-50 transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <a href="{{ url_for('index') }}" class="text-3xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-shield-alt text-blue-600 mr-2"></i>ResQ
+                </a>
+                <div class="hidden md:flex space-x-4 items-center">
+                    <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')" class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i class="fas fa-exclamation-triangle mr-1"></i> Submit Report
+                    </a>
+                    <a href="#" onclick="checkAuth(event, '{{ url_for('map_view') }}')" class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i class="fas fa-map-marked-alt mr-1"></i> Danger Zones
+                    </a>
+                    <a href="#" onclick="checkAuth(event, '{{ url_for('safe_route') }}')" class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i class="fas fa-route mr-1"></i> Safe Route
+                    </a>
+                    <a href="#" onclick="checkAuth(event, '{{ url_for('contact') }}')" class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i class="fas fa-envelope mr-1"></i> Contact
+                    </a>
+                    <a href="#" onclick="checkAuth(event, '{{ url_for('about') }}')" class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i class="fas fa-info-circle mr-1"></i> About
+                    </a>
+                    <button type="button" onclick="sendSOS()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium ml-3 transition-colors flex items-center">
+                        <i class="fas fa-broadcast-tower mr-1"></i> Send SOS
+                    </button>
+                    {% if current_user.is_authenticated and current_user.role != 'authority' %}
+                        <a href="{{ url_for('logout') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium ml-3 transition-colors">
+                            <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium ml-3 transition-colors">
+                            <i class="fas fa-sign-in-alt mr-1"></i> Login
+                        </a>
+                        <a href="{{ url_for('register') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium ml-3 transition-colors">
+                            <i class="fas fa-user-plus mr-1"></i> Register
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="md:hidden">
+                    <button type="button" onclick="toggleMenu()" class="text-gray-700 hover:text-blue-600">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu, show/hide based on menu state. -->
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white shadow-lg rounded-b-lg">
+                <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                    <i class="fas fa-exclamation-triangle mr-1"></i> Submit Report
+                </a>
+                <a href="#" onclick="checkAuth(event, '{{ url_for('map_view') }}')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                    <i class="fas fa-map-marked-alt mr-1"></i> Danger Zones
+                </a>
+                <a href="#" onclick="checkAuth(event, '{{ url_for('safe_route') }}')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                    <i class="fas fa-route mr-1"></i> Safe Route
+                </a>
+                <a href="#" onclick="checkAuth(event, '{{ url_for('contact') }}')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                    <i class="fas fa-envelope mr-1"></i> Contact
+                </a>
+                <a href="#" onclick="checkAuth(event, '{{ url_for('about') }}')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                    <i class="fas fa-info-circle mr-1"></i> About
+                </a>
+                <button type="button" onclick="sendSOS()" class="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-white bg-red-600 hover:bg-red-700">
+                    <i class="fas fa-broadcast-tower mr-1"></i> Send SOS
+                </button>
+                {% if current_user.is_authenticated and current_user.role != 'authority' %}
+                    <a href="{{ url_for('logout') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700">
+                        <i class="fas fa-sign-in-alt mr-1"></i> Login
+                    </a>
+                    <a href="{{ url_for('register') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                        <i class="fas fa-user-plus mr-1"></i> Register
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+<!-- HERO SECTION (SLIDESHOW) -->
+<div class="relative pt-16 pb-32 flex content-center items-center justify-center slideshow">
+    
+    <div class="absolute bottom-0 left-0 right-0">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+            <path fill="#ffffff" fill-opacity="1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,149.3C960,160,1056,160,1152,154.7C1248,149,1344,139,1392,133.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+        </svg>
+    </div>
+    <!-- Slides with Local Images and Text -->
+    <div class="slide" style="background-image: url('{{ url_for('static', filename='images/bg1.jpg') }}');">
+        <div class="container relative mx-auto px-4" data-aos="fade-up" data-aos-duration="1000">
+            <div class="flex flex-col justify-center text-left min-h-screen">
+                <h1 class="text-white font-bold text-5xl md:text-6xl leading-tight mb-4 ml-4">
+                    ResQ <span class="text-white">Response</span>
+                </h1>
+                <p class="text-white text-xl md:text-2xl max-w-lg mb-8 leading-relaxed">
+                    Connecting communities with authorities for real-time disaster reporting and emergency response.
+                </p>
+                <div class="flex space-x-4">
+                    <button onclick="checkAuth(event, '{{ url_for('report') }}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> Report Disaster
+                    </button>
+                    <button onclick="window.location.href='#services'" class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                        <i class="fas fa-info-circle mr-2"></i> Learn More
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="slide" style="background-image: url('{{ url_for('static', filename='images/bg2.jpg') }}');">
+        <div class="container relative mx-auto px-4" data-aos="fade-up" data-aos-duration="1000">
+            <div class="flex flex-col justify-center text-left min-h-screen">
+                <h1 class="text-white font-bold text-5xl md:text-6xl leading-tight mb-4">
+                    ResQ <span class="text-white">Response</span>
+                </h1>
+                <p class="text-white text-xl md:text-2xl max-w-lg mb-8 leading-relaxed">
+                    Connecting communities with authorities for real-time disaster reporting and emergency response.
+                </p>
+                <div class="flex space-x-4">
+                    <button onclick="checkAuth(event, '{{ url_for('report') }}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> Report Disaster
+                    </button>
+                    <button onclick="window.location.href='#services'" class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                        <i class="fas fa-info-circle mr-2"></i> Learn More
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="slide" style="background-image: url('{{ url_for('static', filename='images/bg3.jpg') }}');">
+        <div class="container relative mx-auto px-4" data-aos="fade-up" data-aos-duration="1000">
+            <div class="flex flex-col justify-center text-left min-h-screen">
+                <h1 class="text-white font-bold text-5xl md:text-6xl leading-tight mb-4">
+                    ResQ <span class="text-white">Response</span>
+                </h1>
+                <p class="text-white text-xl md:text-2xl max-w-lg mb-8 leading-relaxed">
+                    Connecting communities with authorities for real-time disaster reporting and emergency response.
+                </p>
+                <div class="flex space-x-4">
+                    <button onclick="checkAuth(event, '{{ url_for('report') }}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> Report Disaster
+                    </button>
+                    <button onclick="window.location.href='#services'" class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                        <i class="fas fa-info-circle mr-2"></i> Learn More
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    <!-- GOVERNMENT ANNOUNCEMENTS TICKER -->
+    <div class="bg-blue-600 text-white py-3 relative overflow-hidden">
+        <div class="flex items-center px-4">
+            <div class="flex-shrink-0 mr-4">
+                <i class="fas fa-bullhorn text-2xl animate-pulse"></i>
+            </div>
+            <div class="overflow-hidden relative w-full">
+                <div class="announcement-ticker whitespace-nowrap">
+                    <span class="mx-4"><i class="fas fa-exclamation-circle mr-2"></i> Government Alert: Stay safe! Follow official channels for updates.</span>
+                    <span class="mx-4"><i class="fas fa-ambulance mr-2"></i> Emergency services are on high alert.</span>
+                    <span class="mx-4"><i class="fas fa-newspaper mr-2"></i> Check local news for the latest instructions.</span>
+                    <span class="mx-4"><i class="fas fa-house-damage mr-2"></i> Shelter information available through the ResQ app.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- USER GUIDELINES SECTION -->
+    <section class="py-16 bg-gray-50" id="guidelines">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:flex lg:items-center lg:justify-between">
+                <div class="lg:w-1/2 mb-10 lg:mb-0" data-aos="fade-right" data-aos-duration="1000">
+                    <div class="relative rounded-xl overflow-hidden shadow-xl transform hover:scale-105 transition-all duration-300">
+                        <img src="{{ url_for('static', filename='images/konstantin-3PNqQNc7pdE-unsplash.jpg') }}" alt="User Guidelines" class="w-full h-auto lg:h-96 object-cover" />
+                        <div class="absolute inset-0 bg-gradient-to-r from-blue-600/50 to-purple-600/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                            <span class="text-white text-2xl font-bold"><i class="fas fa-search-plus"></i> View Safety Tips</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:w-1/2 lg:pl-10" data-aos="fade-left" data-aos-duration="1000" data-aos-delay="200">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6 relative">
+                        User Guidelines
+                        <span class="absolute bottom-0 left-0 w-20 h-1 bg-blue-600"></span>
+                    </h2>
+                    <p class="text-lg text-gray-600 leading-relaxed mb-8">
+                        Essential tips to keep you safe during emergencies:
+                        Our comprehensive user guidelines are designed to help you stay safe during emergencies. They offer clear, actionable advice on staying informed, assembling an emergency kit, and planning your evacuation routes.
+                    </p>
+                    <p class="text-lg text-gray-600 leading-relaxed mb-8">
+                        By following these steps, you not only protect yourself but also help safeguard your community. Embrace these practices to be better prepared when disaster strikes.
+                    </p>
+                    <button onclick="window.location.href='{{ url_for('user_guide') }}'" class="group bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center">
+                        Read More
+                        <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- REAL-TIME DISASTER MONITORING SECTION -->
+    <section class="py-16" id="about">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:flex lg:items-center lg:justify-between">
+                <div class="lg:w-1/2 lg:pr-10 mb-10 lg:mb-0" data-aos="fade-right" data-aos-duration="1000">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-6 relative">
+                        Real-Time Disaster Monitoring
+                        <span class="absolute bottom-0 left-0 w-20 h-1 bg-blue-600"></span>
+                    </h2>
+                    <p class="text-lg text-gray-600 leading-relaxed mb-6">
+                        With ResQ, users can report disasters instantly, track danger zones via crowd-sourced heat maps, and receive critical alerts. Our platform bridges the gap between people in need and authorities.
+                    </p>
+                    <p class="text-lg text-gray-600 leading-relaxed mb-8">
+                        Our advanced monitoring system collects data from multiple sources, providing near-real-time updates on developing situations. This approach allows for quicker response times and more effective resource allocation during crisis situations.
+                    </p>
+                    <div class="flex flex-wrap gap-4 mb-8">
+                        <div class="flex items-center bg-blue-50 p-3 rounded-lg shadow-sm">
+                            <i class="fas fa-bolt text-blue-600 text-xl mr-3"></i>
+                            <span class="font-medium">Real-time Updates</span>
+                        </div>
+                        <div class="flex items-center bg-blue-50 p-3 rounded-lg shadow-sm">
+                            <i class="fas fa-map-marked-alt text-blue-600 text-xl mr-3"></i>
+                            <span class="font-medium">Crowd-sourced Data</span>
+                        </div>
+                        <div class="flex items-center bg-blue-50 p-3 rounded-lg shadow-sm">
+                            <i class="fas fa-bell text-blue-600 text-xl mr-3"></i>
+                            <span class="font-medium">Critical Alerts</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:w-1/2" data-aos="fade-left" data-aos-duration="1000" data-aos-delay="200">
+                    <div class="relative rounded-xl overflow-hidden shadow-xl h-96 group">
+                        <img id="monitoringImage" src="{{ url_for('static', filename='images/scott-graham-5fNmWej4tAA-unsplash.jpg') }}" alt="Monitoring Dashboard" class="w-full h-full object-cover transition-transform duration-5000 ease-in-out transform scale-100 group-hover:scale-110" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
+                            <div class="p-6 text-white">
+                                <h3 class="text-2xl font-bold mb-2">Advanced Monitoring Dashboard</h3>
+                                <p class="mb-4">Track real-time data from multiple sources</p>
+                                <button class="bg-white text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-100 transition-colors">
+                                    <i class="fas fa-desktop mr-2"></i> View Demo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- PUBLIC NOTICE BOARD SECTION -->
+    <section class="py-16 bg-gray-50" id="notices">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12" data-aos="fade-up" data-aos-duration="1000">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4">Public Notice Board</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                    Stay informed with the latest updates and emergency announcements from authorities.
+                </p>
+            </div>
+            
+            <div class="notice-board bg-gray-100 rounded-xl shadow-xl overflow-hidden relative" data-aos="zoom-in" data-aos-duration="1000">
+                <div class="absolute inset-0 bg-black/40"></div>
+                <div class="relative z-10 p-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 backdrop-blur-sm bg-white/95">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-2xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-clipboard-list text-blue-600 mr-3"></i>
+                                Official Announcements
+                            </h3>
+                            <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center">
+                                <i class="fas fa-clock mr-1"></i> Updated: 7h ago
+                            </span>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <div class="notice-item bg-yellow-50 rounded-lg p-4 shadow-sm relative transform transition-all hover:shadow-md hover:-translate-y-1" data-aos="fade-up" data-aos-duration="800">
+                                <div class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center notice-pin">
+                                    <i class="fas fa-thumbtack text-white text-xs"></i>
+                                </div>
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 bg-red-100 rounded-lg p-3 mr-4">
+                                        <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-lg font-semibold mb-2 text-gray-800">Mandatory Evacuation: Zone A</h4>
+                                        <p class="text-gray-600 mb-2">
+                                            Due to rising water levels, authorities have ordered an immediate evacuation of all residents in Zone A. Emergency shelters are open at the Community Center and Lincoln High School.
+                                        </p>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-sm text-gray-500">Issued by: Emergency Management Office</span>
+                                            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+                                                View Map <i class="fas fa-chevron-right ml-1"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="notice-item bg-blue-50 rounded-lg p-4 shadow-sm relative transform transition-all hover:shadow-md hover:-translate-y-1" data-aos="fade-up" data-aos-duration="800" data-aos-delay="100">
+                                <div class="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center notice-pin">
+                                    <i class="fas fa-thumbtack text-white text-xs"></i>
+                                </div>
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 bg-blue-100 rounded-lg p-3 mr-4">
+                                        <i class="fas fa-road text-blue-600 text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-lg font-semibold mb-2 text-gray-800">Road Closures: Zone B</h4>
+                                        <p class="text-gray-600 mb-2">
+                                            Main Street and River Road are closed for emergency repairs following yesterday's flash flooding. Please use alternate routes and follow detour signs.
+                                        </p>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-sm text-gray-500">Issued by: Department of Transportation</span>
+                                            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+                                                View Detours <i class="fas fa-chevron-right ml-1"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="notice-item bg-green-50 rounded-lg p-4 shadow-sm relative transform transition-all hover:shadow-md hover:-translate-y-1" data-aos="fade-up" data-aos-duration="800" data-aos-delay="200">
+                                <div class="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center notice-pin">
+                                    <i class="fas fa-thumbtack text-white text-xs"></i>
+                                </div>
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 bg-green-100 rounded-lg p-3 mr-4">
+                                        <i class="fas fa-home text-green-600 text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-lg font-semibold mb-2 text-gray-800">Community Shelter Open</h4>
+                                        <p class="text-gray-600 mb-2">
+                                            The Community Center is open as an emergency shelter. Accommodations, food, and medical assistance are available. Pets are welcome in designated areas.
+                                        </p>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-sm text-gray-500">Issued by: Community Services</span>
+                                            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+                                                Get Directions <i class="fas fa-chevron-right ml-1"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 text-center">
+                            <button class="text-blue-600 hover:text-blue-800 font-medium flex items-center mx-auto">
+                                View All Notices <i class="fas fa-chevron-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- ADDITIONAL SERVICES SECTION -->
+    <section class="py-16 bg-white" id="services">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12" data-aos="fade-up" data-aos-duration="1000">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4 relative inline-block">
+                    Additional Services
+                    <span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-blue-600"></span>
+                </h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto mt-4">
+                    Our platform offers multiple ways to help and stay informed during emergencies.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="service-card bg-white rounded-xl shadow-md overflow-hidden" data-aos="fade-up" data-aos-duration="800">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?fit=crop&w=700&q=80" alt="Donate Now" class="w-full h-48 object-cover" />
+                        <div class="absolute top-4 right-4 bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col justify-between h-full">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">Donate Now</h3>
+                            <p class="text-gray-600 mb-4">
+                                Support disaster relief efforts by contributing to verified campaigns helping affected communities recover.
+                            </p>
+                        </div>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center mt-auto">
+                            <i class="fas fa-donate mr-2"></i> Donate
+                        </button>
+                    </div>
+                </div>
+
+                <div class="service-card bg-white rounded-xl shadow-md overflow-hidden" data-aos="fade-up" data-aos-duration="800" data-aos-delay="100">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?fit=crop&w=700&q=80" alt="Volunteer" class="w-full h-48 object-cover" />
+                        <div class="absolute top-4 right-4 bg-green-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
+                            <i class="fas fa-hands-helping"></i>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col justify-between h-full">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">Volunteer</h3>
+                            <p class="text-gray-600 mb-4">
+                                Join local efforts to assist in disaster response and recovery—your help makes a difference.
+                            </p>
+                        </div>
+                        <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center mt-auto">
+                            <i class="fas fa-handshake mr-2"></i> Join Now
+                        </button>
+                    </div>
+                </div>
+
+                <div class="service-card bg-white rounded-xl shadow-md overflow-hidden" data-aos="fade-up" data-aos-duration="800" data-aos-delay="200">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?fit=crop&w=700&q=80" alt="Resources" class="w-full h-48 object-cover" />
+                        <div class="absolute top-4 right-4 bg-yellow-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
+                            <i class="fas fa-book"></i>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col justify-between h-full">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">Resources</h3>
+                            <p class="text-gray-600 mb-4">
+                                Access guides, checklists, and tools to prepare for and respond to emergencies effectively.
+                            </p>
+                        </div>
+                        <button class="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center mt-auto">
+                            <i class="fas fa-tools mr-2"></i> Explore
+                        </button>
+                    </div>
+                </div>
+
+                <div class="service-card bg-white rounded-xl shadow-md overflow-hidden" data-aos="fade-up" data-aos-duration="800" data-aos-delay="300">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1527477390519-579ad8923c32?fit=crop&w=700&q=80" alt="Live Updates" class="w-full h-48 object-cover" />
+                        <div class="absolute top-4 right-4 bg-red-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
+                            <i class="fas fa-rss"></i>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col justify-between h-full">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">Live Updates</h3>
+                            <p class="text-gray-600 mb-4">
+                                Stay updated with real-time news and alerts from authorities and fellow users.
+                            </p>
+                        </div>
+                        <button class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center mt-auto">
+                            <i class="fas fa-broadcast-tower mr-2"></i> Tune In
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ SECTION -->
+    <section class="faq-section" id="faq">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12" data-aos="fade-up" data-aos-duration="1000">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4 relative inline-block">
+                    Frequently Asked Questions
+                    <span class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-blue-600"></span>
+                </h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                    Get answers to common questions about using ResQ during emergencies.
+                </p>
+            </div>
+            <div class="space-y-4">
+                <div class="faq-item" data-aos="fade-up" data-aos-duration="800">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span class="text-lg font-semibold text-gray-800">How do I report a disaster?</span>
+                        <i class="fas fa-chevron-down faq-toggle text-gray-500"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p class="text-gray-600">You can report a disaster by clicking the 'Submit Report' button in the navigation bar, logging in (if not already), and filling out the disaster report form with details about the incident.</p>
+                    </div>
+                </div>
+                <div class="faq-item" data-aos="fade-up" data-aos-duration="800" data-aos-delay="100">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span class="text-lg font-semibold text-gray-800">What is the Send SOS feature?</span>
+                        <i class="fas fa-chevron-down faq-toggle text-gray-500"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p class="text-gray-600">The Send SOS feature allows you to send an emergency alert with your location to authorities if you're in immediate danger. Ensure you're logged in and have location services enabled.</p>
+                    </div>
+                </div>
+                <div class="faq-item" data-aos="fade-up" data-aos-duration="800" data-aos-delay="200">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span class="text-lg font-semibold text-gray-800">How can I stay updated on danger zones?</span>
+                        <i class="fas fa-chevron-down faq-toggle text-gray-500"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p class="text-gray-600">Use the 'Danger Zones' link in the navigation to access real-time crowd-sourced heat maps and critical alerts about hazardous areas in your region.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-2xl font-bold mb-4 flex items-center">
+                        <i class="fas fa-shield-alt text-blue-400 mr-2"></i> ResQ
+                    </h3>
+                    <p class="text-gray-400">
+                        Empowering communities with real-time disaster management and emergency response tools.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="{{ url_for('about') }}" class="text-gray-400 hover:text-blue-400 transition-colors"><i class="fas fa-info-circle mr-2"></i> About Us</a></li>
+                        <li><a href="{{ url_for('contact') }}" class="text-gray-400 hover:text-blue-400 transition-colors"><i class="fas fa-envelope mr-2"></i> Contact</a></li>
+                        <li><a href="{{ url_for('user_guide') }}" class="text-gray-400 hover:text-blue-400 transition-colors"><i class="fas fa-book mr-2"></i> Guidelines</a></li>
+                        <li><a href="{{ url_for('map_view') }}" class="text-gray-400 hover:text-blue-400 transition-colors"><i class="fas fa-map-marked-alt mr-2"></i> Danger Zones</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Contact Us</h4>
+                    <p class="text-gray-400 mb-2"><i class="fas fa-phone-alt mr-2"></i> +1-800-RESQ-NOW</p>
+                    <p class="text-gray-400 mb-2"><i class="fas fa-envelope mr-2"></i> support@resq.org</p>
+                    <p class="text-gray-400"><i class="fas fa-map-marker-alt mr-2"></i> 123 Safety Lane, Resilience City</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Follow Us</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-blue-400 transition-colors transform hover:scale-110"><i class="fab fa-twitter text-2xl"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-blue-400 transition-colors transform hover:scale-110"><i class="fab fa-facebook text-2xl"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-blue-400 transition-colors transform hover:scale-110"><i class="fab fa-instagram text-2xl"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-blue-400 transition-colors transform hover:scale-110"><i class="fab fa-linkedin text-2xl"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 border-t border-gray-700 pt-6 text-center">
+                <p class="text-gray-400">© 2025 ResQ. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init();
+
+        // Slideshow for Hero Section
+        const slides = document.querySelectorAll('.slide');
+let currentSlide = 0;
+
+function showSlide(index) {
+    slides.forEach((slide, i) => {
+        slide.classList.remove('active');
+        if (i === index) {
+            slide.classList.add('active');
+            // Ensure text and buttons are visible
+            const text = slide.querySelector('h1, p, button');
+            if (text) text.style.display = 'block';
+        }
+    });
+}
+
+function nextSlide() {
+    currentSlide = (currentSlide + 1) % slides.length;
+    showSlide(currentSlide);
+}
+
+setInterval(nextSlide, 5000); // Change slide every 5 seconds
+showSlide(currentSlide); // Initialize with first slide
+
+        function toggleMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+
+
+function checkAuth(event, url) {
     event.preventDefault();
-    
-    var isAuthenticated = JSON.parse('{{ current_user.is_authenticated | tojson }}');
-    console.log("User authenticated:", isAuthenticated);  // Debugging line
-    console.log("Redirecting to:", url);  // Debugging line
-    
+    var isAuthenticated = {{ current_user.is_authenticated | tojson | safe }};
+    var role = '{{ current_user.role | default("") | safe }}';
+    console.log('checkAuth called - User authenticated:', isAuthenticated, 'Role:', role, 'URL:', url);
+
     if (!isAuthenticated) {
-        alert("Please login to use this feature.");
+        alert("Please login to use this function.");
         window.location.href = "{{ url_for('login') }}";
+    } else if (url === '{{ url_for('authority_dashboard') }}' && role !== 'authority') {
+        alert("Access denied. Authority role required.");
+        window.location.href = "{{ url_for('index') }}";
+    } else if (url === '/sos') {
+        sendSOS();
     } else {
         window.location.href = url;
     }
 }
 
-        function toggleMenu() {
-            const menu = document.querySelector('.navbar-links');
-            menu.classList.toggle('active');
-        }
         function sendSOS() {
+            var isAuthenticated = JSON.parse('{{ current_user.is_authenticated | tojson }}');
+            if (!isAuthenticated) {
+                alert("Please login to use this feature.");
+                window.location.href = "{{ url_for('login') }}";
+                return;
+            }
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
                     fetch('/sos', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-    location: position.coords.latitude + ', ' + position.coords.longitude}),
-
-                    }).then(response => {
+                            location: position.coords.latitude + ', ' + position.coords.longitude
+                        })
+                    })
+                    .then(response => {
                         if (response.ok) {
-                            alert('SOS alert sent to the authorities!!');
+                            alert('SOS alert sent to the authorities!');
                         } else {
                             alert('Error sending SOS');
                         }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error sending SOS');
                     });
+                }, function(error) {
+                    console.error('Geolocation error:', error);
+                    alert('Unable to retrieve location. Please ensure location services are enabled.');
                 });
             } else {
                 alert('Geolocation is not supported by this browser.');
             }
         }
+
+        function toggleFAQ(element) {
+            const answer = element.nextElementSibling;
+            const toggleIcon = element.querySelector('.faq-toggle');
+            answer.classList.toggle('active');
+            toggleIcon.classList.toggle('rotate');
+        }
+
+        document.addEventListener("scroll", function () {
+            const imagesContainer = document.querySelector(".scrolling-images");
+            if (imagesContainer) {
+                const rect = imagesContainer.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom >= 0) {
+                    imagesContainer.classList.add("in-view");
+                }
+            }
+        });
     </script>
 </body>
 </html>
