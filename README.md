@@ -4,6 +4,8 @@
 ResQ is a cutting-edge, real-time disaster management platform that connects communities with emergency response services. By enabling instant disaster reporting and crowd-sourced danger zone mapping, ResQ delivers critical information to authorities instantly—enhancing response efficiency and saving lives.
 
 
+
+
 ![ResQ Platform Overview](https://github.com/user-attachments/assets/423d3b63-6b38-4532-b1b4-2238f9f97e6b)
 
 ---
@@ -72,7 +74,7 @@ ResQ transforms disaster response with a streamlined, real-time process:
 ## **Dependencies**
 To run ResQ, ensure the following dependencies are installed (listed in `requirements.txt`):  
 - Flask  
-- PostgreSQL (via `psycopg2` or similar)  
+- PostgreSQL (via `psycopg2`)  
 - Google Maps API (for mapping functionality)  
 - Tailwind CSS (for UI design, integrated via HTML/CSS)  
 - Other Python libraries as specified in `requirements.txt`
