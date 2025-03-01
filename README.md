@@ -5,7 +5,7 @@ ResQ is a real-time disaster management platform designed to bridge the gap betw
 
 Features
 Instant Disaster Reporting: Users can report incidents like floods, earthquakes, and fires in real time. 
-![Submit Report](blob/main/assests/Screenshot(304).png)
+![Submit Report](main/assests/Screenshot(304).png)
 
 Crowd-Sourced Danger Zones: Visual mapping of high-risk areas to improve situational awareness. 
 
