@@ -86,22 +86,26 @@ To run ResQ, ensure the following dependencies are installed (listed in `require
 ### Clone the Repository:
 ```bash
 git clone https://github.com/Techathon7/ResQ.git
-bash```
+
+```
 
 ### Navigate to the Project Directory:
 ```bash
 cd ResQ
 
+```
 
 ### Install Dependencies:
 ```bash
 pip install -r requirements.txt
 
+```
 
 ### Run the Application:
 ```bash
 flask run
 
+```
 
 ## **Future Enhancements**
 - AI-driven disaster prediction and risk assessment for proactive mitigation.  
