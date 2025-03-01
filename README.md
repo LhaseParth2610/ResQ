@@ -5,6 +5,7 @@ ResQ is a real-time disaster management platform designed to bridge the gap betw
 
 Features
 Instant Disaster Reporting: Users can report incidents like floods, earthquakes, and fires in real time. 
+![Submit Report](assets/screenshot.png)
 
 Crowd-Sourced Danger Zones: Visual mapping of high-risk areas to improve situational awareness. 
 
@@ -38,26 +39,18 @@ UI Design: Professional and accessible, featuring secure authentication and a co
 
 Installation & Setup
 Clone the Repository:
-bash
-Copy
-Edit
 git clone https://github.com/yourusername/ResQ.git
+
 Navigate to the Project Directory:
-bash
-Copy
-Edit
 cd ResQ
+
 Install Dependencies:
-bash
-Copy
-Edit
+
 pip install -r requirements.txt
+
 Configure Environment Variables:
 Update your .env file with the required settings (e.g., database URL, secret keys).
 Run the Application:
-bash
-Copy
-Edit
 flask run
 Future Enhancements
 AI-based disaster prediction and risk assessment.
