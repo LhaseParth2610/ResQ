@@ -1,26 +1,183 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <h2 class="text-center mb-4">Register</h2>
-        <form method="POST">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" class="form-control" id="username" name="username" placeholder="Enter username" required>
+
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+<div class="flex items-center justify-center min-h-screen bg-cover bg-center" style="background-image: url('{{ url_for('static', filename='images/register-bg.jpg') }}');">
+    <div class="bg-white bg-opacity-95 p-8 rounded-lg shadow-md max-w-md w-full m-4">
+        <h2 class="text-blue-600 font-serif text-2xl text-center mb-6">Register</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="text-center mb-4 p-3 rounded {{ 'bg-green-100 text-green-800' if category == 'success' else 'bg-red-100 text-red-800' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('register') }}" class="space-y-4" id="registerForm" novalidate>
+            <div>
+                <label for="username" class="block text-gray-700 font-medium mb-1">Username</label>
+                <input type="text" 
+                       class="w-full p-2 border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       id="username" 
+                       name="username" 
+                       minlength="3"
+                       maxlength="80"
+                       pattern="^[a-zA-Z0-9_]+$"
+                       title="Username must be 3-80 characters long and can only contain letters, numbers, and underscores"
+                       required>
+                <p class="text-sm text-gray-500 mt-1 hidden" id="usernameError"></p>
             </div>
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
+
+            <div>
+                <label for="email" class="block text-gray-700 font-medium mb-1">Email</label>
+                <input type="email" 
+                       class="w-full p-2 border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       id="email" 
+                       name="email" 
+                       pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                       title="Please enter a valid email address"
+                       required>
+                <p class="text-sm text-gray-500 mt-1 hidden" id="emailError"></p>
             </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required>
+
+            <div>
+                <label for="password" class="block text-gray-700 font-medium mb-1">Password</label>
+                <div class="relative">
+                    <input type="password" 
+                           class="w-full p-2 border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                           id="password" 
+                           name="password" 
+                           minlength="6"
+                           required>
+                    <button type="button" 
+                            class="absolute right-2 top-2.5 text-gray-500 hover:text-gray-700"
+                            onclick="togglePassword()">
+                        <svg class="h-5 w-5" id="eyeIcon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="mt-2 text-sm">
+                    <p class="text-gray-500">Password must contain:</p>
+                    <ul class="list-disc ml-5 space-y-1">
+                        <li id="lengthCheck" class="text-red-500">At least 6 characters</li>
+                        <li id="numberCheck" class="text-red-500">At least 1 number</li>
+                        <li id="specialCheck" class="text-red-500">At least 1 special character</li>
+                        <li id="upperCheck" class="text-red-500">At least 1 uppercase letter</li>
+                    </ul>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary btn-block mt-3">Register</button>
-            <p class="text-center mt-3">
-                Already registered? <a href="{{ url_for('login') }}">Login here</a>
+
+            <div>
+                <label for="role" class="block text-gray-700 font-medium mb-1">Role</label>
+                <select class="w-full p-2 border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                        id="role" 
+                        name="role" 
+                        required>
+                    <option value="user">User</option>
+                    <option value="authority">Authority</option>
+                </select>
+            </div>
+
+            <button type="submit" 
+                    class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    id="submitBtn"
+                    disabled>
+                Register
+            </button>
+
+            <p class="text-center mt-4 text-gray-600">
+                Already registered? <a href="{{ url_for('login') }}" class="text-blue-600 hover:underline">Login here</a>
             </p>
         </form>
     </div>
 </div>
+
+<script>
+    const form = document.getElementById('registerForm');
+    const username = document.getElementById('username');
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const submitBtn = document.getElementById('submitBtn');
+    const usernameError = document.getElementById('usernameError');
+    const emailError = document.getElementById('emailError');
+
+    // Password requirement checks
+    const lengthCheck = document.getElementById('lengthCheck');
+    const numberCheck = document.getElementById('numberCheck');
+    const specialCheck = document.getElementById('specialCheck');
+    const upperCheck = document.getElementById('upperCheck');
+
+    function validatePassword(value) {
+        const hasLength = value.length >= 6;
+        const hasNumber = /\d/.test(value);
+        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(value);
+        const hasUpper = /[A-Z]/.test(value);
+
+        lengthCheck.className = hasLength ? 'text-green-500' : 'text-red-500';
+        numberCheck.className = hasNumber ? 'text-green-500' : 'text-red-500';
+        specialCheck.className = hasSpecial ? 'text-green-500' : 'text-red-500';
+        upperCheck.className = hasUpper ? 'text-green-500' : 'text-red-500';
+
+        return hasLength && hasNumber && hasSpecial && hasUpper;
+    }
+
+    function validateForm() {
+        const isUsernameValid = username.value.length >= 3 && /^[a-zA-Z0-9_]+$/.test(username.value);
+        const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value);
+        const isPasswordValid = validatePassword(password.value);
+
+        submitBtn.disabled = !(isUsernameValid && isEmailValid && isPasswordValid);
+    }
+
+    function togglePassword() {
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        
+        const eyeIcon = document.getElementById('eyeIcon');
+        if (type === 'password') {
+            eyeIcon.innerHTML = `
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            `;
+        } else {
+            eyeIcon.innerHTML = `
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+            `;
+        }
+    }
+
+    // Real-time validation
+    username.addEventListener('input', function() {
+        const isValid = this.value.length >= 3 && /^[a-zA-Z0-9_]+$/.test(this.value);
+        usernameError.textContent = isValid ? '' : 'Username must be at least 3 characters and contain only letters, numbers, and underscores';
+        usernameError.className = `text-sm ${isValid ? 'text-green-500 hidden' : 'text-red-500'}`;
+        validateForm();
+    });
+
+    email.addEventListener('input', function() {
+        const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.value);
+        emailError.textContent = isValid ? '' : 'Please enter a valid email address';
+        emailError.className = `text-sm ${isValid ? 'text-green-500 hidden' : 'text-red-500'}`;
+        validateForm();
+    });
+
+    password.addEventListener('input', function() {
+        validatePassword(this.value);
+        validateForm();
+    });
+
+    form.addEventListener('submit', function(e) {
+        if (!validatePassword(password.value)) {
+            e.preventDefault();
+            alert('Please ensure your password meets all requirements.');
+        }
+    });
+</script>
+
 {% endblock %}
