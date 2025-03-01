@@ -86,7 +86,7 @@ To run ResQ, ensure the following dependencies are installed (listed in `require
 ### Clone the Repository:
 ```bash
 git clone https://github.com/Techathon7/ResQ.git
-
+bash```
 
 ### Navigate to the Project Directory:
 ```bash
