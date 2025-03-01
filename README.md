@@ -5,11 +5,13 @@ ResQ is a real-time disaster management platform designed to bridge the gap betw
 
 Features
 Instant Disaster Reporting: Users can report incidents like floods, earthquakes, and fires in real time. 
+
 ![Image](https://github.com/user-attachments/assets/ca92dd4c-12e1-47e2-bedb-b8561bc2fc6f)
 
 Crowd-Sourced Danger Zones:
 Visual mapping of high-risk areas to improve situational awareness.
 helps both users and authorities get insights on the actual on ground situation also helps in identifying emerging hazards, enabling proactive disaster management and evacuation planning.
+
 ![Image](https://github.com/user-attachments/assets/aec4199a-f9e6-449a-a0b0-6d7cb08a47fa)
 
 Rapid alerts via SOS and broadcast messaging.These SOS messages contain users details like name,emergency contact number and ofcourse the users current location in longitudes and latitudes,this information is sent directly to the authorities 
@@ -17,6 +19,9 @@ Rapid alerts via SOS and broadcast messaging.These SOS messages contain users de
 Safe Routes:
 Dynamically maps secure paths away from danger zones, guiding users to safety during emergencies.
 Updates in real time to reflect changing conditions on the ground.
+
+![Image](https://github.com/user-attachments/assets/46c307e9-31c6-4ae6-b255-c6a06d5363b0)
+
 
 
 Role-Based Efficiency:
