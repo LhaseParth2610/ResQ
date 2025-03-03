@@ -18,7 +18,7 @@ ResQ is a cutting-edge, real-time disaster management platform that connects com
 
   ![Disaster Reporting Interface](https://github.com/user-attachments/assets/ca92dd4c-12e1-47e2-bedb-b8561bc2fc6f)
 
-- **Crowd-Sourced Danger Zones**: Visual mapping of high-risk areas enhances situational awareness for both users and authorities. This feature identifies emerging hazards, enabling proactive disaster management and evacuation planning.
+- **Crowd-Sourced Danger Zones**: Visual mapping of high-risk areas enhances situational awareness for both users and authorities. This feature identifies emerging hazards, enabling proactive disaster management,evacuation planning and both users and authorities to get useful  actual on  ground insights establishing real time communicaiton .
   
   ![Danger Zone Map](https://github.com/user-attachments/assets/aec4199a-f9e6-449a-a0b0-6d7cb08a47fa)
 
