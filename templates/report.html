@@ -308,6 +308,11 @@
 </head>
 <body>
     <div class="report-container">
+        <script>
+            {% if image_error %}
+                alert("{{ image_error }}");
+            {% endif %}
+        </script>
         <div class="report-card" data-aos="zoom-in">
             <div class="report-header">
                 <h1>

@@ -52,6 +52,7 @@
         }
 
         .info-window {
+                    
             max-width: 300px;
         }
 
@@ -61,12 +62,30 @@
             object-fit: cover;
         }
     </style>
-    <script src="https://maps.googleapis.com/maps/api/js?key=yOUR_API&libraries=visualization"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
         let map, heatmap;
+
+        async function loadGoogleMapsScript() {
+            try {
+                const response = await fetch('/api/maps/key');
+                const data = await response.json();
+                const apiKey = data.api_key;
+
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=visualization`;
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+                script.onload = () => {
+                    getUserLocation();
+                };
+            } catch (error) {
+                console.error('Could not fetch Google Maps API key.', error);
+            }
+        }
 
         function initMap(userLat, userLng) {
             map = new google.maps.Map(document.getElementById("map"), {
@@ -119,7 +138,7 @@
                                 title: `${zone.location} - Reports: ${zone.report_count}`,
                                 icon: {
                                     url: "{{ url_for('static', filename='custom-icon.png') }}",
-                                    scaledSize: new google.maps.Size(100, 100),
+                                    scaledSize: new google.maps.Size(50, 50),
                                     anchor: new google.maps.Point(20, 20)
                                 },
                                 opacity: 0
@@ -155,7 +174,8 @@
                                         `;
 
                                         const infoWindow = new google.maps.InfoWindow({
-                                            content: `<div class="info-window">${content}</div>`
+                                            content: `<div class="info-window">
+                                                        ${content}</div>`
                                         });
                                         
                                         infoWindow.open(map, marker);
@@ -214,7 +234,7 @@
         }
     </script>
 </head>
-<body onload="getUserLocation()">
+<body onload="loadGoogleMapsScript()">
     <h1 class="text-center mb-4">Danger Zones Near You</h1>
     <div id="map"></div>
 </body>
