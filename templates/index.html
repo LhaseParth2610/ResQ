@@ -214,6 +214,10 @@
                     <a href="#" onclick="checkAuth(event, '{{ url_for('about') }}')" class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                         <i class="fas fa-info-circle mr-1"></i> About
                     </a>
+                                        <!-- Add this inside your <nav> tag list of links -->
+                    <a href="{{ url_for('resource_map') }}" class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i class="fas fa-info-circle mr-1"></i> Resource Map
+                    </a>
                     <button type="button" onclick="sendSOS()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium ml-3 transition-colors flex items-center">
                         <i class="fas fa-broadcast-tower mr-1"></i> Send SOS
                     </button>
@@ -589,7 +593,8 @@
                             <i class="fas fa-hands-helping"></i>
                         </div>
                     </div>
-                    <div class="p-6 flex flex-col justify-between h-full">
+                    <div class="p-6 flex flex-col justify-between h-full cursor-pointer"
+                        onclick="document.getElementById('live-updates-details').scrollIntoView({ behavior: 'smooth' })">
                         <div>
                             <h3 class="text-xl font-bold text-gray-800 mb-2">Volunteer</h3>
                             <p class="text-gray-600 mb-4">
@@ -622,24 +627,52 @@
                     </div>
                 </div>
 
-                <div class="service-card bg-white rounded-xl shadow-md overflow-hidden" data-aos="fade-up" data-aos-duration="800" data-aos-delay="300">
-                    <div class="relative">
-                        <img src="https://images.unsplash.com/photo-1527477390519-579ad8923c32?fit=crop&w=700&q=80" alt="Live Updates" class="w-full h-48 object-cover" />
-                        <div class="absolute top-4 right-4 bg-red-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
-                            <i class="fas fa-rss"></i>
-                        </div>
-                    </div>
-                    <div class="p-6 flex flex-col justify-between h-full">
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-800 mb-2">Live Updates</h3>
-                            <p class="text-gray-600 mb-4">
-                                Stay updated with real-time news and alerts from authorities and fellow users.
-                            </p>
-                        </div>
-                        <button class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center mt-auto">
-                            <i class="fas fa-broadcast-tower mr-2"></i> Tune In
-                        </button>
-                    </div>
+                <div class="service-card bg-white rounded-xl shadow-md overflow-hidden"
+     data-aos="fade-up"
+     data-aos-duration="800"
+     data-aos-delay="300">
+
+    <!-- IMAGE BLOCK (NEW) -->
+    <div class="relative">
+        <img
+            src="https://t4.ftcdn.net/jpg/18/13/91/79/240_F_1813917926_XAConAdozlKBN6hkZJgBRQ01vu2erGCU.jpg"
+            alt="Live Disaster Updates"
+            class="w-full h-48 object-cover"
+        />
+        <div class="absolute top-4 right-4 bg-red-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
+            <i class="fas fa-rss"></i>
+        </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="p-6 flex flex-col justify-between h-full">
+        <div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Live Updates</h3>
+
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm text-gray-600">USGS & NOAA Alerts</span>
+                <span id="live-time" class="text-xs text-gray-500"></span>
+            </div>
+
+            <div id="live-list" class="space-y-2 text-sm max-h-32 overflow-y-auto">
+                <p class="text-gray-400">Loading updates...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    </section>
+    <!-- DETAILED LIVE UPDATES SECTION -->
+    <section id="live-updates-details" class="py-16 bg-gray-50">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">🚨 Live Disaster Alerts (US)</h2>
+                    <span id="live-time-details" class="text-sm text-gray-500"></span>
+                </div>
+
+                <div id="live-list-details" class="space-y-4">
+                    <p class="text-gray-500 text-sm">Loading detailed alerts...</p>
                 </div>
             </div>
         </div>
@@ -839,6 +872,66 @@ function checkAuth(event, url) {
                 }
             }
         });
+    
+async function loadLiveUpdates() {
+  try {
+    const res = await fetch("/api/live_updates");   
+    const data = await res.json();
+
+    const list = document.getElementById("live-list");
+    const time = document.getElementById("live-time");
+    const listDetails = document.getElementById("live-list-details");
+    const timeDetails = document.getElementById("live-time-details");
+
+    list.innerHTML = "";
+    if (listDetails) listDetails.innerHTML = "";
+
+    if (!data.events || data.events.length === 0) {
+      list.innerHTML = "<p class='text-sm text-gray-500'>No active alerts</p>";
+      return;
+    }
+
+    time.textContent = "Updated: " +
+      new Date(data.last_updated).toLocaleTimeString();
+    if (timeDetails) timeDetails.textContent = time.textContent;
+
+    data.events.forEach(e => {
+      const color =
+        e.severity >= 5 ? "border-red-600 bg-red-50" :
+        e.severity >= 4 ? "border-orange-500 bg-orange-50" :
+                          "border-yellow-500 bg-yellow-50";
+
+      const div = document.createElement("div");
+      div.className = `border-l-4 p-3 rounded ${color}`;
+
+      div.innerHTML = `
+        <div class="flex justify-between">
+          <h3 class="font-semibold">${e.title}</h3>
+          <span class="text-xs text-gray-500">${e.source}</span>
+        </div>
+        <p class="text-sm text-gray-600">${e.details || ""}</p>
+        <p class="text-xs text-gray-500 mt-1">
+          Severity: ${e.severity} • ${new Date(e.time).toLocaleString()}
+        </p>
+      `;
+
+      list.appendChild(div);
+      if (listDetails) {
+      const detailedDiv = div.cloneNode(true);
+      listDetails.appendChild(detailedDiv);
+}
+
+    });
+
+  } catch (err) {
+    document.getElementById("live-list").innerHTML =
+      "<p class='text-red-500 text-sm'>Failed to load updates</p>";
+  }
+}
+
+loadLiveUpdates();
+setInterval(loadLiveUpdates, 10 * 60 * 1000);
+
     </script>
 </body>
 </html>

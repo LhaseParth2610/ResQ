@@ -10,18 +10,19 @@ from flask_migrate import Migrate
 from functools import wraps  # Added for the require_authority decorator
 import logging
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime,timedelta
 import time
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 import os
 from dotenv import load_dotenv
 from llm_vision import is_disaster_image
+from usgs_noaa import fetch_usgs_earthquakes, fetch_noaa_alerts
 load_dotenv()
 
 # Import models and db instance
-from models import db, User, Report, DangerZone, BroadcastHistory
-
+# from models import db, User, Report, DangerZone, BroadcastHistory
+from models import db, User, Report, DangerZone, BroadcastHistory, ResourceCamp 
 # Load environment variables at the top of app.py
 
 # Configure logging
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config['SECRET_KEY'] = 'your_secret_key_here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin@localhost/disaster_management'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:root@localhost/disaster_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configure Flask-Mail
@@ -194,49 +195,28 @@ with app.app_context():
     start_scheduler()
 atexit.register(shutdown_scheduler)
 
-def fetch_gdacs_events():
-    """
-    Fetch and parse the GDACS RSS feed.
-    Returns a list of disaster events (filtered for India).
-    """
-    gdacs_url = "https://www.gdacs.org/xml/rss.xml"
-    try:
-        response = requests.get(gdacs_url)
-        if response.status_code != 200:
-            print("Error fetching GDACS feed:", response.status_code)
-            return []
-        xml_content = response.content
-        root = ET.fromstring(xml_content)
-        channel = root.find('channel')
-        items = channel.findall('item')
-        events = []
-        # Define georss namespace
-        namespace = {'georss': 'http://www.georss.org/georss'}
-        for item in items:
-            title = item.find('title').text if item.find('title') is not None else ""
-            description = item.find('description').text if item.find('description') is not None else ""
-            pubDate = item.find('pubDate').text if item.find('pubDate') is not None else ""
-            geo_point = item.find('georss:point', namespace)
-            if geo_point is not None:
-                coords = geo_point.text.split()
-                if len(coords) == 2:
-                    try:
-                        lat, lon = float(coords[0]), float(coords[1])
-                    except Exception:
-                        continue
-                    # Filter for events in India (approx lat: 6-37, lon: 68-98)
-                    if 6.0 <= lat <= 37.0 and 68.0 <= lon <= 98.0:
-                        events.append({
-                            'title': title,
-                            'description': description,
-                            'pubDate': pubDate,
-                            'latitude': lat,
-                            'longitude': lon
-                        })
-        return events
-    except Exception as e:
-        print("Error in fetch_gdacs_events:", e)
-        return []
+
+live_cache = {
+    "events": [],
+    "last_updated": None
+}
+
+def refresh_live_updates():
+    usgs = fetch_usgs_earthquakes()
+    noaa = fetch_noaa_alerts()
+
+    live_cache["events"] = usgs + noaa
+    live_cache["last_updated"] = datetime.utcnow()
+
+with app.app_context():
+    refresh_live_updates()
+
+
+@scheduler.scheduled_job("interval", minutes=10)
+def scheduled_live_updates():
+    refresh_live_updates()
+
+
 # Routes (unchanged except for /broadcast)
 @app.route('/')
 def home():
@@ -285,6 +265,11 @@ def login():
             return redirect(url_for('login'))  # Redirect back to login page with flash message
 
     return render_template('login.html')
+
+@app.route("/api/live_updates")
+def live_updates():
+    return jsonify(live_cache)
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -343,10 +328,10 @@ def report():
         if image_file and image_file.filename:
             image_data = image_file.read()
             
-            # Verify the image with the LLM
-            if not is_disaster_image(image_data):
-                error_message = 'The uploaded image does not appear to be a valid disaster-related photo.'
-                return render_template('report.html', image_error=error_message)
+            # # Verify the image with the LLM
+            # if not is_disaster_image(image_data):
+            #     error_message = 'The uploaded image does not appear to be a valid disaster-related photo.'
+            #     return render_template('report.html', image_error=error_message)
             
             image = image_data
 
@@ -551,13 +536,7 @@ def authority_dashboard():
                                trend_labels=[],
                                trend_data={'Fire': [], 'Flood': [], 'Earthquake': [], 'Unknown': []})
 
-@app.route('/gdacs_events')
-def gdacs_events():
-    """
-    Expose GDACS events as JSON.
-    """
-    events = fetch_gdacs_events()
-    return jsonify(events)
+
 @app.route('/user_guide')
 def user_guide():
     return render_template('user_guide.html')
@@ -594,6 +573,77 @@ def debug_danger_zones():
             'report_count': zone.report_count
         })
     return jsonify(debug_data)
+@app.route('/resource_map')
+def resource_map():
+    """Page for users to view the resource map"""
+    return render_template('resource_map.html')
+
+@app.route('/manage_resource_camps')
+@login_required
+@require_authority
+def manage_resource_camps():
+    """Authority page to manage resource camps"""
+    return render_template('manage_resource_camps.html')
+
+@app.route('/api/resource_camps')
+def get_resource_camps():
+    """API to fetch all camps for the Google Map"""
+    camps = ResourceCamp.query.all()
+    return jsonify([camp.to_dict() for camp in camps])
+
+@app.route('/add_resource_camp', methods=['POST'])
+@login_required
+@require_authority
+def add_resource_camp():
+    """Authority route to add a new camp"""
+    name = request.form.get('name')
+    camp_type = request.form.get('camp_type')
+    location = request.form.get('location')
+    contact = request.form.get('contact')
+
+    # Geocode the address
+    lat, lng = get_coordinates(location)
+
+    if lat and lng:
+        new_camp = ResourceCamp(
+            name=name,
+            camp_type=camp_type,
+            location=location,
+            latitude=lat,
+            longitude=lng,
+            contact_info=contact
+        )
+        db.session.add(new_camp)
+        db.session.commit()
+        
+        # Return JSON for AJAX requests, or redirect for form submissions
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.accept_mimetypes.accept_json:
+            return jsonify({'success': True, 'message': f'{camp_type} Camp added successfully!'})
+        
+        flash(f'{camp_type} Camp added successfully!', 'success')
+        return redirect(url_for('authority_dashboard'))
+    else:
+        # Return JSON error for AJAX requests
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.accept_mimetypes.accept_json:
+            return jsonify({'success': False, 'message': 'Could not find location coordinates. Please be more specific.'}), 400
+        
+        flash('Could not find location coordinates. Please be more specific.', 'danger')
+        return redirect(url_for('authority_dashboard'))
+
+@app.route('/delete_resource_camp/<int:camp_id>', methods=['DELETE'])
+@login_required
+@require_authority
+def delete_resource_camp(camp_id):
+    """Authority route to delete a resource camp"""
+    camp = ResourceCamp.query.get_or_404(camp_id)
+    try:
+        db.session.delete(camp)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Camp deleted successfully!'})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting camp: {str(e)}")
+        return jsonify({'success': False, 'message': 'Error deleting camp.'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

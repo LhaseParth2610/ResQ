@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +16,7 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             font-family: 'Bodoni Moda', serif;
             background-color: #fff;
@@ -29,21 +31,25 @@
             margin: 0 auto;
             box-sizing: border-box;
         }
+
         .card {
             margin-bottom: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             background-color: #fff;
             border-radius: 8px;
         }
+
         .card-body {
             padding: 20px;
         }
+
         .card-title {
             font-size: 1.5rem;
             color: #1976d2;
             margin-bottom: 15px;
             font-weight: 600;
         }
+
         .chart-container {
             position: relative;
             margin: auto;
@@ -52,22 +58,27 @@
             border-radius: 4px;
             background-color: #fff;
         }
+
         .list-group {
             list-style: none;
             padding: 0;
         }
+
         .list-group-item {
             padding: 12px 15px;
             border-bottom: 1px solid #eee;
             transition: background-color 0.3s ease;
-            font-family: 'Georgia', serif; /* Changed font for better readability and elegance */
+            font-family: 'Georgia', serif;
+            /* Changed font for better readability and elegance */
             font-size: 1.1rem;
             line-height: 1.5;
             color: #444;
         }
+
         .list-group-item:hover {
             background-color: #f2f2f2;
         }
+
         .btn-primary {
             background-color: #1976d2;
             border: none;
@@ -77,6 +88,7 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
+
         .btn-primary:hover {
             background-color: #125ca0;
         }
@@ -124,7 +136,8 @@
 
         .carousel-item img {
             border-radius: 8px;
-            max-height: 320px; /* Increased height */
+            max-height: 320px;
+            /* Increased height */
             object-fit: cover;
         }
 
@@ -136,25 +149,31 @@
             border-radius: 8px;
             padding: 20px;
         }
+
         .data-card h5 {
             font-size: 1.5rem;
             color: #1976d2;
             margin-bottom: 15px;
             font-weight: 600;
         }
+
         .data-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
-            margin-bottom: 20px; /* Add spacing between sections */
+            margin-bottom: 20px;
+            /* Add spacing between sections */
         }
-        .data-table th, .data-table td {
+
+        .data-table th,
+        .data-table td {
             padding: 10px;
             text-align: left;
             border-bottom: 1px solid #eee;
             font-size: 1rem;
             color: #444;
         }
+
         .data-table th {
             background-color: #f9f9f9;
             color: #1976d2;
@@ -169,13 +188,16 @@
             border-radius: 8px;
             padding: 20px;
         }
+
         .combined-data-card .card-title {
             margin-bottom: 20px;
         }
+
         .combined-data-card .chart-container,
         .combined-data-card .data-table,
         .combined-data-card .list-group {
-            margin-bottom: 25px; /* Spacing between elements within the combined card */
+            margin-bottom: 25px;
+            /* Spacing between elements within the combined card */
         }
 
         /* Enhanced Recent Reports Styles (Visually Appealing) */
@@ -190,13 +212,16 @@
             font-family: 'Georgia', serif;
             transition: transform 0.2s ease;
         }
-        .report-table th, .report-table td {
+
+        .report-table th,
+        .report-table td {
             padding: 18px 20px;
             text-align: left;
             color: #2d3748;
             font-size: 1.1rem;
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
+
         .report-table th {
             background: linear-gradient(90deg, #1976d2, #63b3ed);
             color: #ffffff;
@@ -207,24 +232,30 @@
             top: 0;
             z-index: 10;
         }
+
         .report-table tr {
             transition: all 0.3s ease;
         }
+
         .report-table tr:nth-child(even) {
             background-color: rgba(248, 250, 252, 0.7);
         }
+
         .report-table tr:hover {
             background-color: #e2e8f0;
             transform: scale(1.01);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
         }
+
         .report-table tr:last-child td {
             border-bottom: none;
         }
+
         .report-table td strong {
             color: #1976d2;
             font-weight: 600;
         }
+
         .report-table td span {
             color: #718096;
             font-size: 0.95rem;
@@ -235,44 +266,60 @@
             .dashboard-container {
                 padding: 10px;
             }
+
             .card-body {
                 padding: 15px;
             }
+
             .card-title {
                 font-size: 1.2rem;
             }
+
             #map {
-                height: 60vh; /* Adjusted for mobile */
+                height: 60vh;
+                /* Adjusted for mobile */
             }
+
             .chart-container {
                 height: 250px;
             }
+
             .btn-primary {
                 padding: 8px 16px;
             }
+
             .list-group-item {
                 font-size: 1rem;
                 padding: 10px 12px;
             }
-            .data-card, .combined-data-card {
+
+            .data-card,
+            .combined-data-card {
                 padding: 15px;
             }
-            .data-table th, .data-table td {
+
+            .data-table th,
+            .data-table td {
                 padding: 8px;
                 font-size: 0.9rem;
             }
-            .report-table th, .report-table td {
+
+            .report-table th,
+            .report-table td {
                 padding: 12px 15px;
                 font-size: 0.95rem;
             }
+
             .combined-data-card .chart-container,
             .combined-data-card .data-table,
             .combined-data-card .list-group {
-                margin-bottom: 15px; /* Reduced spacing on mobile */
+                margin-bottom: 15px;
+                /* Reduced spacing on mobile */
             }
         }
     </style>
 </head>
+
 <body>
     <div class="dashboard-container">
         <h1 class="text-center mb-4">Authority Dashboard</h1>
@@ -312,32 +359,33 @@
         </div>
 
         <!-- Recent Reports (Improved Font Style) -->
-<!-- Recent Reports (Updated to Table Format) -->
-<div class="card">
-    <div class="card-body">
-        <h5 class="card-title">Recent Reports</h5>
-        <table class="report-table">
-            <thead>
-                <tr>
-                    <th>Disaster Type</th>
-                    <th>Location</th>
-                    <th>Description</th>
-                    <th>Time</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for report in reports %}
-                <tr>
-                    <td><strong style="color: #1976d2;">{{ report.disaster_type }}</strong></td>
-                    <td>{{ report.location }}</td>
-                    <td>{{ report.description|truncate(50) }}</td>
-                    <td>{{ report.created_at.strftime('%Y-%m-%d %H:%M:%S') if report.created_at else 'Not available' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+        <!-- Recent Reports (Updated to Table Format) -->
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Recent Reports</h5>
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Disaster Type</th>
+                            <th>Location</th>
+                            <th>Description</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                        <tr>
+                            <td><strong style="color: #1976d2;">{{ report.disaster_type }}</strong></td>
+                            <td>{{ report.location }}</td>
+                            <td>{{ report.description|truncate(50) }}</td>
+                            <td>{{ report.created_at.strftime('%Y-%m-%d %H:%M:%S') if report.created_at else 'Not
+                                available' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
         <!-- Combined Data-Driven Analysis -->
         <div class="combined-data-card">
@@ -358,17 +406,18 @@
                 </thead>
                 <tbody>
                     {% if zones and zones|length > 0 %}
-                        {% set sorted_zones = zones|sort(attribute='report_count', reverse=true) if zones|length > 0 else [] %}
-                        {% for zone in sorted_zones[:5] %}
-                        <tr>
-                            <td>{{ zone.location }}</td>
-                            <td>{{ zone.report_count|default(0) }}</td>
-                        </tr>
-                        {% endfor %}
+                    {% set sorted_zones = zones|sort(attribute='report_count', reverse=true) if zones|length > 0 else []
+                    %}
+                    {% for zone in sorted_zones[:5] %}
+                    <tr>
+                        <td>{{ zone.location }}</td>
+                        <td>{{ zone.report_count|default(0) }}</td>
+                    </tr>
+                    {% endfor %}
                     {% else %}
-                        <tr>
-                            <td colspan="2" style="text-align: center; color: #6c757d;">No danger zones available.</td>
-                        </tr>
+                    <tr>
+                        <td colspan="2" style="text-align: center; color: #6c757d;">No danger zones available.</td>
+                    </tr>
                     {% endif %}
                 </tbody>
             </table>
@@ -377,21 +426,39 @@
             <p>Based on report frequency and type, prioritize response for high-impact disasters:</p>
             <ul class="list-group">
                 {% if stats.Fire > 0 %}
-                <li class="list-group-item"><strong>Fire:</strong> {{ stats.Fire }} reports – High urgency, potential for rapid spread.</li>
+                <li class="list-group-item"><strong>Fire:</strong> {{ stats.Fire }} reports – High urgency, potential
+                    for rapid spread.</li>
                 {% endif %}
                 {% if stats.Flood > 0 %}
-                <li class="list-group-item"><strong>Flood:</strong> {{ stats.Flood }} reports – High risk for infrastructure damage.</li>
+                <li class="list-group-item"><strong>Flood:</strong> {{ stats.Flood }} reports – High risk for
+                    infrastructure damage.</li>
                 {% endif %}
                 {% if stats.Earthquake > 0 %}
-                <li class="list-group-item"><strong>Earthquake:</strong> {{ stats.Earthquake }} reports – Immediate structural assessment needed.</li>
+                <li class="list-group-item"><strong>Earthquake:</strong> {{ stats.Earthquake }} reports – Immediate
+                    structural assessment needed.</li>
                 {% endif %}
                 {% if stats.Unknown > 0 %}
-                <li class="list-group-item"><strong>Unknown:</strong> {{ stats.Unknown }} reports – Investigate for clarification.</li>
+                <li class="list-group-item"><strong>Unknown:</strong> {{ stats.Unknown }} reports – Investigate for
+                    clarification.</li>
                 {% endif %}
                 {% if stats.Fire == 0 and stats.Flood == 0 and stats.Earthquake == 0 and stats.Unknown == 0 %}
                 <li class="list-group-item" style="color: #6c757d;">No disaster reports available.</li>
                 {% endif %}
             </ul>
+        </div>
+
+        <!-- Resource Camp Management (Updated) -->
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Resource Camp Management</h5>
+                <p style="color: #6c757d; margin-bottom: 20px;">Manage resource camps (food, medical aid, shelter,
+                    supplies) to help the public find assistance during disasters.</p>
+
+                <a href="{{ url_for('manage_resource_camps') }}" class="btn-primary"
+                    style="text-decoration: none; display: inline-block;">
+                    🗺️ Manage Resource Camps
+                </a>
+            </div>
         </div>
 
         <!-- Actions (Moved to the end of the page) -->
@@ -421,29 +488,29 @@
                 labels: ['Fire', 'Flood', 'Earthquake', 'Unknown'],
                 datasets: [{
                     label: 'Number of Reports',
-                    data: [{{ stats.Fire }}, {{ stats.Flood }}, {{ stats.Earthquake }}, {{ stats.Unknown }}],
-                    backgroundColor: [
-                        'rgba(25, 118, 210, 0.2)',
-                        'rgba(54, 162, 235, 0.2)',
-                        'rgba(255, 206, 86, 0.2)',
-                        'rgba(75, 192, 192, 0.2)'
-                    ],
-                    borderColor: [
-                        'rgba(25, 118, 210, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)'
-                    ],
-                    borderWidth: 1
+                    data: [{{ stats.Fire }}, {{ stats.Flood }}, {{ stats.Earthquake }}, { { stats.Unknown } }],
+        backgroundColor: [
+            'rgba(25, 118, 210, 0.2)',
+            'rgba(54, 162, 235, 0.2)',
+            'rgba(255, 206, 86, 0.2)',
+            'rgba(75, 192, 192, 0.2)'
+        ],
+            borderColor: [
+                'rgba(25, 118, 210, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)'
+            ],
+                borderWidth: 1
                 }]
             },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
                 }
             }
+        }
         });
 
         // Chart.js for Disaster Trends Over Time (Using Jinja2 data)
@@ -451,32 +518,32 @@
         var disasterTrendsChart = new Chart(ctxTrends, {
             type: 'line',
             data: {
-                labels: {{ trend_labels|tojson|safe }},
-                datasets: [{
-                    label: 'Fire Reports',
-                    data: {{ trend_data.Fire|tojson|safe }},
-                    borderColor: 'rgba(25, 118, 210, 1)',
-                    backgroundColor: 'rgba(25, 118, 210, 0.2)',
-                    fill: true
+                labels: {{ trend_labels| tojson | safe }},
+        datasets: [{
+            label: 'Fire Reports',
+            data: {{ trend_data.Fire | tojson | safe }},
+            borderColor: 'rgba(25, 118, 210, 1)',
+            backgroundColor: 'rgba(25, 118, 210, 0.2)',
+            fill: true
                 }, {
-                    label: 'Flood Reports',
-                    data: {{ trend_data.Flood|tojson|safe }},
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    fill: true
+            label: 'Flood Reports',
+            data: {{ trend_data.Flood | tojson | safe }},
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            fill: true
                 }]
             },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
                 }
             }
+        }
         });
 
         // Google Maps for Danger Zones (From map.html)
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             var mapContainer = document.getElementById('map');
             if (!mapContainer) {
                 console.error('Map container not found');
@@ -592,9 +659,9 @@
                                             const infoWindow = new google.maps.InfoWindow({
                                                 content: `<div class="info-window">${content}</div>`
                                             });
-                                            
+
                                             infoWindow.open(map, marker);
-                                            
+
                                             // Initialize carousel after info window opens
                                             google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
                                                 $(`#carousel-${zone.id}`).carousel();
@@ -632,4 +699,5 @@
         });
     </script>
 </body>
+
 </html>
