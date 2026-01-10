@@ -1,34 +1,64 @@
 # ---------------- USGS ----------------
 
+import requests
+from datetime import datetime
+
 USGS_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
 
-def fetch_usgs_earthquakes():
+def fetch_usgs_earthquakes(min_mag=1.0, timeout=10):
     events = []
-
     try:
-        data = requests.get(USGS_URL, timeout=10).json()
+        resp = requests.get(USGS_URL, timeout=timeout, headers={"User-Agent": "ResQ/1.0"})
+        resp.raise_for_status()  # raises HTTPError for non-2xx
 
-        for feature in data.get("features", []):
-            mag = feature["properties"]["mag"]
-            if mag is None or mag < 2.5:
+        ctype = resp.headers.get("Content-Type", "")
+        if "application/json" not in ctype:
+            # debug info
+            print("Unexpected content-type:", ctype)
+            print("Response text (truncated):", resp.text[:500])
+            return events
+
+        data = resp.json()
+        features = data.get("features", [])
+        print(f"DEBUG: fetched {len(features)} features")  # helpful while testing
+
+        for feature in features:
+            props = feature.get("properties", {})
+            mag = props.get("mag")
+            if mag is None or mag < min_mag:
                 continue
 
-            lon, lat, depth = feature["geometry"]["coordinates"]
-            time_ms = feature["properties"]["time"]
+            geom = feature.get("geometry") or {}
+            coords = geom.get("coordinates") or [None, None, None]
+            lon, lat, depth = coords
+
+            time_ms = props.get("time")
+            if time_ms is None:
+                continue
 
             events.append({
+                "id": feature.get("id"),
                 "source": "USGS",
                 "type": "earthquake",
-                "title": feature["properties"]["title"],
+                "title": props.get("title"),
                 "severity": min(int(mag), 5),
                 "latitude": lat,
                 "longitude": lon,
-                "time": datetime.utcfromtimestamp(time_ms / 1000).isoformat(),
+                "depth_km": depth,
+                "time": datetime.utcfromtimestamp(time_ms / 1000).isoformat() + "Z",
+                "updated": datetime.utcfromtimestamp(props.get("updated", time_ms) / 1000).isoformat() + "Z",
                 "details": f"Magnitude {mag}"
             })
 
+    except requests.exceptions.RequestException as req_e:
+        print("Network/HTTP error fetching USGS feed:", req_e)
+    except ValueError as json_e:
+        print("JSON decode error:", json_e)
     except Exception as e:
-        print("USGS error:", e)
+        # When debugging, print full exception
+        import traceback
+        traceback.print_exc()
+        print("Unexpected error:", e)
 
     return events
 

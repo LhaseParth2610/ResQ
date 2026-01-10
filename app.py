@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config['SECRET_KEY'] = 'your_secret_key_here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:root@localhost/disaster_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin@localhost/disaster_management'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configure Flask-Mail
@@ -328,10 +328,10 @@ def report():
         if image_file and image_file.filename:
             image_data = image_file.read()
             
-            # # Verify the image with the LLM
-            # if not is_disaster_image(image_data):
-            #     error_message = 'The uploaded image does not appear to be a valid disaster-related photo.'
-            #     return render_template('report.html', image_error=error_message)
+            # Verify the image with the LLM
+            if not is_disaster_image(image_data):
+                error_message = 'The uploaded image does not appear to be a valid disaster-related photo.'
+                return render_template('report.html', image_error=error_message)
             
             image = image_data
 
