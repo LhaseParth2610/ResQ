@@ -2,10 +2,34 @@
 
 import requests
 from datetime import datetime
+import re
+
+def classify_alert(title, details, source):
+    """Classify an alert into a disaster category using keyword matching.
+    
+    Categories: earthquake, flood, tornado, wildfire, severe_storm, other
+    """
+    text = (title + " " + (details or "")).lower()
+    
+    # USGS source is always earthquakes
+    if source == "USGS":
+        return "earthquake"
+    
+    # Priority-based classification for NOAA alerts
+    if "tornado" in text:
+        return "tornado"
+    if "flood" in text:
+        return "flood"
+    if "fire" in text or "wildfire" in text or "red flag" in text:
+        return "wildfire"
+    if "thunderstorm" in text or "storm" in text:
+        return "severe_storm"
+    
+    return "other"
 
 USGS_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
 
-def fetch_usgs_earthquakes(min_mag=1.0, timeout=10):
+def fetch_usgs_earthquakes(min_mag=0, timeout=10):
     events = []
     try:
         resp = requests.get(USGS_URL, timeout=timeout, headers={"User-Agent": "ResQ/1.0"})
@@ -36,18 +60,22 @@ def fetch_usgs_earthquakes(min_mag=1.0, timeout=10):
             if time_ms is None:
                 continue
 
+            title = props.get("title", "")
+            details = f"Magnitude {mag}"
+            
             events.append({
                 "id": feature.get("id"),
                 "source": "USGS",
                 "type": "earthquake",
-                "title": props.get("title"),
+                "category": classify_alert(title, details, "USGS"),
+                "title": title,
                 "severity": min(int(mag), 5),
                 "latitude": lat,
                 "longitude": lon,
                 "depth_km": depth,
                 "time": datetime.utcfromtimestamp(time_ms / 1000).isoformat() + "Z",
                 "updated": datetime.utcfromtimestamp(props.get("updated", time_ms) / 1000).isoformat() + "Z",
-                "details": f"Magnitude {mag}"
+                "details": details
             })
 
     except requests.exceptions.RequestException as req_e:
@@ -90,15 +118,19 @@ def fetch_noaa_alerts():
             # Use first coordinate as reference
             lon, lat = coords["coordinates"][0][0]
 
+            title = props.get("headline", "Weather Alert")
+            details = props.get("description", "")
+            
             events.append({
                 "source": "NOAA",
                 "type": "weather",
-                "title": props.get("headline", "Weather Alert"),
+                "category": classify_alert(title, details, "NOAA"),
+                "title": title,
                 "severity": severity_map.get(props.get("severity", "Unknown"), 1),
                 "latitude": lat,
                 "longitude": lon,
                 "time": props.get("sent"),
-                "details": props.get("description", "")
+                "details": details
             })
 
     except Exception as e:
