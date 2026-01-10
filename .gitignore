@@ -3,3 +3,5 @@ venv/
 __pycache__/
 *.pyc
 env_file_activation.txt
+env
+__pycache__/submit_report.cpython-311.pyc
