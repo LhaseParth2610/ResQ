@@ -16,10 +16,61 @@
     <!-- Favicon -->
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
     <style>
+        /* Mobile Responsive Fixes */
+        html,
+        body {
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         /* Custom styles that extend Tailwind */
         body {
             font-family: 'Bodoni Moda', serif;
             scroll-behavior: smooth;
+            position: relative;
+        }
+
+        /* Mobile Navigation Fixes */
+        @media (max-width: 768px) {
+            nav {
+                width: 100%;
+                max-width: 100vw;
+                overflow-x: hidden;
+            }
+
+            #mobile-menu {
+                width: 100%;
+                max-width: 100vw;
+            }
+
+            #mobile-menu>div {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .max-w-7xl {
+                max-width: 100%;
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+
+            /* Ensure all sections stay within viewport */
+            section,
+            div {
+                max-width: 100vw;
+            }
+
+            /* Fix slideshow on mobile */
+            .slideshow,
+            .slide {
+                max-width: 100vw;
+                overflow: hidden;
+            }
         }
 
         .hero-bg {
@@ -295,6 +346,10 @@
                 <a href="#" onclick="checkAuth(event, '{{ url_for('about') }}')"
                     class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
                     <i class="fas fa-info-circle mr-1"></i> About
+                </a>
+                <a href="{{ url_for('resource_map') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                    <i class="fas fa-campground mr-1"></i> Resource Map
                 </a>
                 <button type="button" onclick="sendSOS()"
                     class="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-white bg-red-600 hover:bg-red-700">
