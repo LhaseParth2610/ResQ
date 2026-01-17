@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,43 +10,51 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         /* Map takes full remaining height */
-        #map { height: 100%; width: 100%; border-radius: 0.5rem; }
-        
+        #map {
+            height: 100%;
+            width: 100%;
+            border-radius: 0.5rem;
+        }
+
         /* Custom scrollbar for the sidebar */
-        .camp-list::-webkit-scrollbar { width: 6px; }
-        .camp-list::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
-        
+        .camp-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .camp-list::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+
         /* Loading overlay */
-        #loading { display: none; }
+        #loading {
+            display: none;
+        }
     </style>
 </head>
+
 <body class="bg-gray-50 font-sans h-screen flex flex-col">
 
-    <!-- Navigation Bar (Matching App Theme) -->
-    <nav class="bg-blue-900 text-white shadow-lg z-10">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <i class="fas fa-hand-holding-heart text-2xl text-red-400"></i>
-                <h1 class="text-2xl font-bold tracking-wide">ResQ <span class="text-blue-200 font-light">Resource Map</span></h1>
-            </div>
-            <a href="{{ url_for('index') }}" class="flex items-center space-x-2 hover:text-blue-200 transition">
-                <i class="fas fa-arrow-left"></i>
-                <span>Back to Home</span>
-            </a>
-        </div>
-    </nav>
+    <!-- Compact Back Button -->
+    <div class="bg-white border-b border-gray-200 px-4 py-3">
+        <a href="{{ url_for('index') }}" class="inline-flex items-center text-gray-600 hover:text-blue-600 transition">
+            <i class="fas fa-arrow-left mr-2"></i>
+            <span class="font-medium">Back to Home</span>
+        </a>
+    </div>
 
     <!-- Main Content Area -->
     <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-        
+
         <!-- Sidebar Controls -->
         <div class="w-full md:w-96 bg-white shadow-xl z-10 flex flex-col border-r border-gray-200">
             <div class="p-6 border-b border-gray-100 bg-gray-50">
                 <h2 class="text-xl font-bold text-gray-800 mb-2">Find Help Nearby</h2>
                 <p class="text-sm text-gray-500 mb-4">Locate shelters, food, and medical aid.</p>
-                
+
                 <!-- Action Button -->
-                <button onclick="findNearestCamp()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition transform active:scale-95 flex items-center justify-center space-x-2">
+                <button onclick="findNearestCamp()"
+                    class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition transform active:scale-95 flex items-center justify-center space-x-2">
                     <i class="fas fa-location-arrow"></i>
                     <span>Navigate to Nearest Camp</span>
                 </button>
@@ -53,11 +62,15 @@
             </div>
 
             <!-- Legend -->
-            <div class="p-4 bg-white border-b grid grid-cols-2 gap-2 text-sm">
-                <div class="flex items-center"><img src="https://maps.google.com/mapfiles/kml/pal3/icon46.png" class="w-6 h-6 mr-2"> <span>Medical</span></div>
-                <div class="flex items-center"><img src="https://maps.google.com/mapfiles/kml/pal2/icon5.png" class="w-6 h-6 mr-2"> <span>Shelter</span></div>
-                <div class="flex items-center"><img src="https://maps.google.com/mapfiles/kml/pal2/icon40.png" class="w-6 h-6 mr-2"> <span>Food</span></div>
-                <div class="flex items-center"><img src="https://maps.google.com/mapfiles/kml/pal3/icon26.png" class="w-6 h-6 mr-2"> <span>Supplies</span></div>
+            <div class="py-2 px-3 bg-white border-b grid grid-cols-2 gap-2 text-sm">
+                <div class="flex items-center"><img src="https://maps.google.com/mapfiles/kml/pal3/icon46.png"
+                        class="w-6 h-6 mr-2"> <span>Medical</span></div>
+                <div class="flex items-center"><img src="https://maps.google.com/mapfiles/kml/pal2/icon5.png"
+                        class="w-6 h-6 mr-2"> <span>Shelter</span></div>
+                <div class="flex items-center"><img src="https://maps.google.com/mapfiles/kml/pal2/icon40.png"
+                        class="w-6 h-6 mr-2"> <span>Food</span></div>
+                <div class="flex items-center"><img src="https://maps.google.com/mapfiles/kml/pal3/icon26.png"
+                        class="w-6 h-6 mr-2"> <span>Supplies</span></div>
             </div>
 
             <!-- List of Locations (Populated via JS) -->
@@ -70,9 +83,10 @@
         <!-- Map Area -->
         <div class="flex-1 relative">
             <div id="map"></div>
-            
+
             <!-- Loading Spinner -->
-            <div id="loading" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 text-white">
+            <div id="loading"
+                class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 text-white">
                 <div class="text-center">
                     <i class="fas fa-spinner fa-spin text-4xl mb-2"></i>
                     <p>Calculating route...</p>
@@ -101,7 +115,7 @@
         function initMap() {
             // Default View (India Center)
             const defaultLoc = { lat: 20.5937, lng: 78.9629 };
-            
+
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 5,
                 center: defaultLoc,
@@ -129,7 +143,7 @@
                 const response = await fetch('/api/resource_camps');
                 allCamps = await response.json();
                 renderCampList(allCamps);
-                
+
                 const bounds = new google.maps.LatLngBounds();
 
                 allCamps.forEach(camp => {
@@ -138,7 +152,7 @@
                     bounds.extend(pos);
                 });
 
-                if(allCamps.length > 0) {
+                if (allCamps.length > 0) {
                     map.fitBounds(bounds);
                 }
             } catch (error) {
@@ -191,9 +205,9 @@
                 };
 
                 let iconClass = "fa-utensils text-orange-500";
-                if(camp.camp_type === 'Medical') iconClass = "fa-briefcase-medical text-red-500";
-                if(camp.camp_type === 'Shelter') iconClass = "fa-home text-blue-500";
-                if(camp.camp_type === 'Clothes') iconClass = "fa-tshirt text-green-500";
+                if (camp.camp_type === 'Medical') iconClass = "fa-briefcase-medical text-red-500";
+                if (camp.camp_type === 'Shelter') iconClass = "fa-home text-blue-500";
+                if (camp.camp_type === 'Clothes') iconClass = "fa-tshirt text-green-500";
 
                 item.innerHTML = `
                     <div class="flex items-start">
@@ -215,7 +229,7 @@
         function findNearestCamp() {
             const statusMsg = document.getElementById('status-msg');
             const loading = document.getElementById('loading');
-            
+
             statusMsg.textContent = "Requesting your location...";
             statusMsg.className = "text-xs text-center text-blue-600 mt-2 font-semibold";
 
@@ -246,7 +260,7 @@
                         let minDistance = Infinity;
 
                         allCamps.forEach(camp => {
-                            const dist = haversineDistance(userLocation, {lat: camp.latitude, lng: camp.longitude});
+                            const dist = haversineDistance(userLocation, { lat: camp.latitude, lng: camp.longitude });
                             if (dist < minDistance) {
                                 minDistance = dist;
                                 closestCamp = camp;
@@ -288,7 +302,7 @@
                 travelMode: google.maps.TravelMode.DRIVING
             };
 
-            directionsService.route(request, function(result, status) {
+            directionsService.route(request, function (result, status) {
                 if (status == 'OK') {
                     directionsRenderer.setDirections(result);
                     // Add a custom marker for the destination because directionsRenderer might hide standard ones
@@ -311,8 +325,8 @@
             var dLat = toRad(lat2 - lat1);
             var dLon = toRad(lon2 - lon1);
             var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
             var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             var d = R * c;
             return d;
@@ -333,5 +347,94 @@
             .catch(err => console.error("Failed to load Maps API Key", err));
     </script>
 
+    <!-- Mobile Bottom Navigation -->
+    <style>
+        @media (max-width: 768px) {
+            body {
+                padding-bottom: 80px;
+            }
+
+            .camp-list {
+                max-height: 250px;
+            }
+
+            /* Make map bigger on mobile */
+            #map {
+                min-height: 600px !important;
+            }
+
+            /* Adjust sidebar to take more space, pushing map down */
+            .w-full.md\:w-96 {
+                max-height: 450px;
+            }
+        }
+
+        .mobile-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 8px 0;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+        }
+
+        .mobile-bottom-nav .nav-items {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .mobile-bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 500;
+            border-radius: 8px;
+        }
+
+        .mobile-bottom-nav .nav-item:hover,
+        .mobile-bottom-nav .nav-item.active {
+            color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .mobile-bottom-nav .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+    </style>
+    <nav class="mobile-bottom-nav">
+        <div class="nav-items">
+            <a href="{{ url_for('index') }}" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="{{ url_for('safe_route') }}" class="nav-item">
+                <i class="fas fa-route"></i>
+                <span>Safe Route</span>
+            </a>
+            <a href="{{ url_for('alerts') }}" class="nav-item">
+                <i class="fas fa-bell"></i>
+                <span>Alerts</span>
+            </a>
+            <a href="{{ url_for('resource_map') }}" class="nav-item active">
+                <i class="fas fa-campground"></i>
+                <span>Camps</span>
+            </a>
+            <a href="{{ url_for('report') }}" class="nav-item">
+                <i class="fas fa-edit"></i>
+                <span>Report</span>
+            </a>
+        </div>
+    </nav>
+
 </body>
+
 </html>

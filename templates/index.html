@@ -37,39 +37,530 @@
 
         /* Mobile Navigation Fixes */
         @media (max-width: 768px) {
-            nav {
-                width: 100%;
-                max-width: 100vw;
-                overflow-x: hidden;
+            nav.desktop-nav {
+                display: none !important;
             }
 
             #mobile-menu {
-                width: 100%;
-                max-width: 100vw;
+                display: none !important;
             }
 
-            #mobile-menu>div {
-                width: 100%;
-                max-width: 100%;
+            .md\:hidden {
+                display: none !important;
             }
 
-            .max-w-7xl {
-                max-width: 100%;
-                padding-left: 12px;
-                padding-right: 12px;
+            /* Add padding for bottom nav and top header */
+            body {
+                padding-bottom: 140px;
+                padding-top: 0;
             }
 
-            /* Ensure all sections stay within viewport */
-            section,
-            div {
-                max-width: 100vw;
-            }
-
-            /* Fix slideshow on mobile */
+            /* HIDE ONLY HERO/SLIDESHOW ON MOBILE - Keep other sections */
             .slideshow,
-            .slide {
-                max-width: 100vw;
-                overflow: hidden;
+            .announcement-ticker,
+            .bg-blue-600,
+            #about,
+            #notices,
+            #services,
+            #live-updates-details,
+            .mobile-ticker,
+            .desktop-content {
+                display: none !important;
+            }
+
+            /* Ensure these sections ARE visible on mobile */
+            #guidelines,
+            .mobile-notice-board,
+            .faq-section,
+            footer {
+                display: block !important;
+            }
+
+            /* Show mobile elements */
+            .mobile-header,
+            .mobile-alert-banner,
+            .mobile-feature-cards,
+            .mobile-alert-indicators,
+            .mobile-map-preview,
+            .mobile-sos-bar,
+            .mobile-bottom-nav {
+                display: block !important;
+            }
+
+            .mobile-header {
+                display: flex !important;
+            }
+        }
+
+        /* Hide mobile-only elements on desktop */
+        @media (min-width: 769px) {
+            .mobile-header {
+                display: none !important;
+            }
+
+            .mobile-bottom-nav {
+                display: none !important;
+            }
+
+            .mobile-sos-bar {
+                display: none !important;
+            }
+
+            .mobile-alert-banner {
+                display: none !important;
+            }
+
+            .mobile-feature-cards {
+                display: none !important;
+            }
+
+            .mobile-map-preview {
+                display: none !important;
+            }
+        }
+
+        /* Mobile Bottom Navigation Bar */
+        .mobile-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 8px 0;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+        }
+
+        .mobile-bottom-nav .nav-items {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .mobile-bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-radius: 8px;
+        }
+
+        .mobile-bottom-nav .nav-item:hover,
+        .mobile-bottom-nav .nav-item.active {
+            color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .mobile-bottom-nav .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        /* Mobile SOS Bar */
+        .mobile-sos-bar {
+            position: fixed;
+            bottom: 70px;
+            left: 16px;
+            right: 16px;
+            z-index: 999;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .mobile-sos-bar button {
+            width: 100%;
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: none;
+            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-sos-bar button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(220, 38, 38, 0.5);
+        }
+
+        .mobile-sos-bar button:active {
+            transform: translateY(0);
+        }
+
+        /* Mobile Header */
+        .mobile-header {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            z-index: 100;
+            padding: 12px 16px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mobile-header .location-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mobile-header .location-info i {
+            color: #dc2626;
+            font-size: 16px;
+        }
+
+        .mobile-header .location-info .location-text {
+            font-size: 14px;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .mobile-header .location-info .location-subtext {
+            font-size: 11px;
+            color: #64748b;
+        }
+
+        .mobile-header .header-icons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .mobile-header .header-icons .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mobile-header .header-icons .icon-btn:hover {
+            background: #e2e8f0;
+        }
+
+        .mobile-header .header-icons .profile-btn {
+            background: #2563eb;
+            color: white;
+        }
+
+        .mobile-header .header-icons .profile-btn:hover {
+            background: #1d4ed8;
+        }
+
+        /* Mobile Alert Banner */
+        .mobile-alert-banner {
+            display: none;
+            margin: 70px 12px 16px 12px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 16px;
+            padding: 20px;
+            border-left: 4px solid #f59e0b;
+            transition: opacity 0.3s ease;
+            min-height: 160px;
+        }
+
+        .mobile-alert-banner.alert-high {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left-color: #dc2626;
+        }
+
+        .mobile-alert-banner.alert-medium {
+            background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+            border-left-color: #ea580c;
+        }
+
+        .mobile-alert-banner .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            gap: 12px;
+        }
+
+        .mobile-alert-banner .alert-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            line-height: 1.3;
+        }
+
+        .mobile-alert-banner .alert-badge {
+            font-size: 10px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .mobile-alert-banner .alert-badge.low {
+            background: #22c55e;
+            color: white;
+        }
+
+        .mobile-alert-banner .alert-badge.medium {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .mobile-alert-banner .alert-badge.high {
+            background: #dc2626;
+            color: white;
+        }
+
+        .mobile-alert-banner .alert-issuer {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .mobile-alert-banner .alert-details {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 12px;
+        }
+
+        .mobile-alert-banner .alert-actions {
+            display: flex;
+            gap: 24px;
+        }
+
+        .mobile-alert-banner .alert-action {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: #475569;
+            cursor: pointer;
+        }
+
+        .mobile-alert-banner .alert-action i {
+            font-size: 16px;
+        }
+
+        /* Mobile Feature Cards */
+        .mobile-feature-cards {
+            display: none;
+            padding: 0 16px;
+            margin-bottom: 16px;
+        }
+
+        .mobile-feature-cards .cards-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .mobile-feature-cards .feature-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 16px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .mobile-feature-cards .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .mobile-feature-cards .feature-card i {
+            font-size: 28px;
+            color: #2563eb;
+            margin-bottom: 8px;
+        }
+
+        .mobile-feature-cards .feature-card .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        /* Alert Type Indicators */
+        .mobile-alert-indicators {
+            display: none;
+            padding: 0 16px;
+            margin-bottom: 16px;
+        }
+
+        .mobile-alert-indicators .indicators-row {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .mobile-alert-indicators .indicator {
+            flex-shrink: 0;
+            background: white;
+            border-radius: 12px;
+            padding: 12px 16px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            min-width: 70px;
+        }
+
+        .mobile-alert-indicators .indicator i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .mobile-alert-indicators .indicator .count {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .mobile-alert-indicators .indicator .label {
+            font-size: 10px;
+            color: #64748b;
+        }
+
+        .mobile-alert-indicators .indicator.earthquake i {
+            color: #f59e0b;
+        }
+
+        .mobile-alert-indicators .indicator.flood i {
+            color: #3b82f6;
+        }
+
+        .mobile-alert-indicators .indicator.storm i {
+            color: #8b5cf6;
+        }
+
+        .mobile-alert-indicators .indicator.tornado i {
+            color: #64748b;
+        }
+
+        /* Mobile Map Preview */
+        .mobile-map-preview {
+            display: none;
+            padding: 0 16px;
+            margin-bottom: 16px;
+        }
+
+        .mobile-map-preview .map-container {
+            background: #e2e8f0;
+            border-radius: 16px;
+            height: 200px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .mobile-map-preview .map-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .mobile-map-preview .map-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+            padding: 16px;
+            color: white;
+        }
+
+        .mobile-map-preview .map-overlay .map-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .mobile-map-preview .map-overlay .map-subtitle {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        /* Profile Dropdown */
+        .profile-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            display: none;
+            z-index: 1001;
+            overflow: hidden;
+        }
+
+        .profile-dropdown.show {
+            display: block;
+        }
+
+        .profile-dropdown a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            color: #1e293b;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .profile-dropdown a:hover {
+            background: #f1f5f9;
+        }
+
+        .profile-dropdown a i {
+            width: 20px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        @media (max-width: 768px) {
+
+            .mobile-header,
+            .mobile-alert-banner,
+            .mobile-feature-cards,
+            .mobile-alert-indicators,
+            .mobile-map-preview {
+                display: flex !important;
+            }
+
+            .mobile-feature-cards,
+            .mobile-alert-indicators,
+            .mobile-map-preview {
+                display: block !important;
             }
         }
 
@@ -263,8 +754,204 @@
 </head>
 
 <body class="bg-white text-gray-800 overflow-x-hidden">
+    <!-- MOBILE HEADER -->
+    <div class="mobile-header">
+        <div class="location-info">
+            <i class="fas fa-map-marker-alt"></i>
+            <div>
+                <div class="location-text" id="mobile-location-text">Your Location</div>
+                <div class="location-subtext" id="mobile-location-subtext">Detecting location...</div>
+            </div>
+        </div>
+        <div class="header-icons">
+            <button class="icon-btn" onclick="window.location.href='#live-updates-details'">
+                <i class="fas fa-bell"></i>
+            </button>
+            <div style="position: relative;">
+                <button class="icon-btn profile-btn" onclick="toggleProfileDropdown()">
+                    <i class="fas fa-user"></i>
+                </button>
+                <div class="profile-dropdown" id="profile-dropdown">
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('logout') }}">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('login') }}">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Login
+                    </a>
+                    <a href="{{ url_for('register') }}">
+                        <i class="fas fa-user-plus"></i>
+                        Register
+                    </a>
+                    {% endif %}
+                    <a href="#" onclick="checkAuth(event, '{{ url_for('contact') }}')">
+                        <i class="fas fa-envelope"></i>
+                        Contact
+                    </a>
+                    <a href="#" onclick="checkAuth(event, '{{ url_for('about') }}')">
+                        <i class="fas fa-info-circle"></i>
+                        About
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOBILE ALERT BANNER -->
+    <div class="mobile-alert-banner" id="mobile-alert-banner">
+        <!-- Title + Badge Row (like alerts page) -->
+        <div class="flex justify-between items-start mb-2">
+            <h3 id="mobile-alert-title" class="font-bold text-gray-800 flex-1 pr-2" style="font-size: 15px;">Loading
+                alerts...</h3>
+            <span id="mobile-alert-badge"
+                class="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">Low</span>
+        </div>
+
+        <!-- Source Row -->
+        <p class="text-xs text-gray-500 mb-2">
+            <i class="fas fa-satellite-dish mr-1"></i>
+            <span id="mobile-alert-issuer">USGS</span>
+            <span id="mobile-slide-counter" style="color: #94a3b8;">• 1/17</span>
+        </p>
+
+        <!-- Time Row -->
+        <p class="text-xs text-gray-500">
+            <i class="fas fa-clock mr-1"></i>
+            <span id="mobile-alert-time">--</span>
+        </p>
+
+        <!-- Location Row -->
+        <p class="text-xs text-gray-500 mt-1" id="mobile-alert-location-row">
+            <i class="fas fa-map-marker-alt mr-1"></i>
+            <span id="mobile-alert-location">--</span>
+        </p>
+
+        <!-- Action Icons -->
+        <div class="flex gap-5 mt-3">
+            <i class="fas fa-share-alt text-gray-500 cursor-pointer" style="font-size: 15px;"
+                onclick="shareAlert()"></i>
+            <i class="fas fa-volume-up text-gray-500 cursor-pointer" style="font-size: 15px;"
+                onclick="speakAlert()"></i>
+            <i class="fas fa-info-circle text-gray-500 cursor-pointer" style="font-size: 15px;"
+                onclick="window.location.href='{{ url_for('user_guide') }}'"></i>
+        </div>
+    </div>
+
+    <!-- MOBILE FEATURE CARDS -->
+    <div class="mobile-feature-cards">
+        <div class="cards-row">
+            <a href="{{ url_for('user_guide') }}" class="feature-card">
+                <i class="fas fa-book-open"></i>
+                <div class="card-title">Disaster Guide</div>
+            </a>
+            <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')" class="feature-card">
+                <i class="fas fa-edit"></i>
+                <div class="card-title">Submit Report</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- MOBILE ALERT TYPE INDICATORS -->
+    <div class="mobile-alert-indicators">
+        <div class="indicators-row">
+            <div class="indicator earthquake" onclick="scrollToAlerts('earthquake')">
+                <i class="fas fa-globe-americas"></i>
+                <div class="count" id="mobile-count-earthquake">0</div>
+                <div class="label">Quakes</div>
+            </div>
+            <div class="indicator flood" onclick="scrollToAlerts('flood')">
+                <i class="fas fa-water"></i>
+                <div class="count" id="mobile-count-flood">0</div>
+                <div class="label">Floods</div>
+            </div>
+            <div class="indicator storm" onclick="scrollToAlerts('severe_storm')">
+                <i class="fas fa-bolt"></i>
+                <div class="count" id="mobile-count-storm">0</div>
+                <div class="label">Storms</div>
+            </div>
+            <div class="indicator tornado" onclick="scrollToAlerts('tornado')">
+                <i class="fas fa-wind"></i>
+                <div class="count" id="mobile-count-tornado">0</div>
+                <div class="label">Tornado</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOBILE MAP PREVIEW -->
+    <div class="mobile-map-preview">
+        <div class="map-container" onclick="checkAuth(event, '{{ url_for('map_view') }}')">
+            <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=600&h=300&fit=crop" alt="Map"
+                style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">
+            <div class="map-overlay">
+                <div class="map-title"><i class="fas fa-map-marked-alt"></i> Danger Zones Map</div>
+                <div class="map-subtitle">Tap to view full map with alerts</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOBILE ANNOUNCEMENT TICKER -->
+    <div class="mobile-ticker"
+        style="background: #2563eb; padding: 12px 16px; margin: 0 16px 16px 16px; border-radius: 12px; overflow: hidden;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-bullhorn" style="color: white; font-size: 16px;"></i>
+            <div class="ticker-text"
+                style="color: white; font-size: 13px; white-space: nowrap; animation: ticker 15s linear infinite;">
+                ⚠️ Stay alert! Check for updates regularly. Report any disaster immediately. Follow official guidelines.
+                Your safety is our priority!
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes ticker {
+            0% {
+                transform: translateX(100%);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+    </style>
+
+    <!-- MOBILE SOS BAR -->
+    <div class="mobile-sos-bar">
+        <button type="button" onclick="sendSOS()">
+            <span><i class="fas fa-broadcast-tower"></i> SOS Call</span>
+            <i class="fas fa-phone"></i>
+        </button>
+    </div>
+
+    <!-- MOBILE BOTTOM NAVIGATION -->
+    <nav class="mobile-bottom-nav">
+        <div class="nav-items">
+            <a href="{{ url_for('index') }}" class="nav-item active">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="#" onclick="checkAuth(event, '{{ url_for('safe_route') }}')" class="nav-item">
+                <i class="fas fa-route"></i>
+                <span>Safe Route</span>
+            </a>
+            <a href="{{ url_for('alerts') }}" class="nav-item">
+                <i class="fas fa-bell"></i>
+                <span>Alerts</span>
+            </a>
+            <a href="{{ url_for('resource_map') }}" class="nav-item">
+                <i class="fas fa-campground"></i>
+                <span>Camps</span>
+            </a>
+            <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')" class="nav-item">
+                <i class="fas fa-edit"></i>
+                <span>Report</span>
+            </a>
+        </div>
+    </nav>
+
     <!-- NAVIGATION BAR -->
-    <nav class="fixed top-0 left-0 w-full bg-white shadow-md z-50 transition-all duration-300" id="navbar">
+    <nav class="fixed top-0 left-0 w-full bg-white shadow-md z-50 transition-all duration-300 desktop-nav" id="navbar">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
                 <a href="{{ url_for('index') }}" class="text-3xl font-bold text-gray-800 flex items-center">
@@ -508,6 +1195,72 @@
                         Read More
                         <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
                     </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MOBILE NOTICE BOARD (Mobile Only) -->
+    <section class="mobile-notice-board py-8 bg-white" style="display: none;">
+        <div class="px-4">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-clipboard-list text-blue-600 mr-2"></i>
+                    Notice Board
+                </h2>
+                <span class="text-xs text-gray-500">Updated Today</span>
+            </div>
+
+            <div class="space-y-3">
+                <!-- Notice 1 -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-600">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-shield-alt text-white text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <h3 class="font-semibold text-gray-800 text-sm">Stay Prepared</h3>
+                            <p class="text-gray-600 text-xs mt-1">Always keep an emergency kit ready with first aid
+                                supplies, water, and important documents.</p>
+                            <span class="text-xs text-blue-600 mt-2 inline-block">Safety Advisory</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notice 2 -->
+                <div class="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl border-l-4 border-amber-500">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-exclamation text-white text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <h3 class="font-semibold text-gray-800 text-sm">Report Incidents</h3>
+                            <p class="text-gray-600 text-xs mt-1">Use our quick report feature to inform authorities
+                                about any disaster situation in your area.</p>
+                            <span class="text-xs text-amber-600 mt-2 inline-block">Quick Action</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notice 3 -->
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-600">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-map-marker-alt text-white text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <h3 class="font-semibold text-gray-800 text-sm">Find Safe Zones</h3>
+                            <p class="text-gray-600 text-xs mt-1">Locate nearby shelters and resource camps through our
+                                interactive danger zone map.</p>
+                            <span class="text-xs text-green-600 mt-2 inline-block">Resource Info</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1252,12 +2005,221 @@
                 // Render detailed categorized view
                 renderCategorizedAlerts(currentTab);
 
+                // Update mobile UI elements
+                updateMobileAlertBanner(data.events);
+                updateMobileIndicators();
+
             } catch (err) {
                 console.error('Error loading live updates:', err);
                 document.getElementById('live-list').innerHTML =
                     "<p class='text-red-500 text-sm'>Failed to load updates</p>";
             }
         }
+
+        // ========== MOBILE FEATURE FUNCTIONS ==========
+
+        // Toggle profile dropdown
+        function toggleProfileDropdown() {
+            const dropdown = document.getElementById('profile-dropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('show');
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            const dropdown = document.getElementById('profile-dropdown');
+            const profileBtn = e.target.closest('.profile-btn');
+            if (dropdown && !profileBtn && !e.target.closest('.profile-dropdown')) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Scroll to alerts section and switch tab
+        function scrollToAlerts(category) {
+            switchAlertTab(category);
+            document.getElementById('live-updates-details').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Share alert function
+        function shareAlert() {
+            const alertTitle = document.getElementById('mobile-alert-title')?.textContent || 'ResQ Alert';
+            const alertText = `${alertTitle} - Check ResQ for more details`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'ResQ Alert',
+                    text: alertText,
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(alertText).then(() => {
+                    alert('Alert copied to clipboard!');
+                }).catch(() => {
+                    alert('Share not supported on this device');
+                });
+            }
+        }
+
+        // Speak alert function (text-to-speech)
+        function speakAlert() {
+            const alertTitle = document.getElementById('mobile-alert-title')?.textContent || '';
+            const alertIssuer = document.getElementById('mobile-alert-issuer')?.textContent || '';
+
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(`${alertTitle}. ${alertIssuer}`);
+                utterance.rate = 0.9;
+                speechSynthesis.speak(utterance);
+            } else {
+                alert('Text-to-speech not supported on this device');
+            }
+        }
+
+        // Store alerts for slideshow
+        let mobileAlerts = [];
+        let currentAlertIndex = 0;
+        let alertSlideInterval = null;
+
+        // Update mobile alert banner with slideshow capability
+        function updateMobileAlertBanner(events) {
+            // Clear existing interval
+            if (alertSlideInterval) clearInterval(alertSlideInterval);
+
+            if (!events || events.length === 0) {
+                document.getElementById('mobile-alert-title').textContent = 'No Active Alerts';
+                document.getElementById('mobile-alert-badge').textContent = 'Safe';
+                document.getElementById('mobile-alert-badge').className = 'alert-badge low';
+                document.getElementById('mobile-alert-issuer').textContent = 'All clear in your area';
+                document.getElementById('mobile-alert-location').innerHTML = '<i class="fas fa-map-marker-alt"></i> --';
+                document.getElementById('mobile-alert-time').innerHTML = '<i class="fas fa-clock"></i> --';
+                document.getElementById('mobile-alert-banner').className = 'mobile-alert-banner';
+                return;
+            }
+
+            // Sort by time (latest first) and store
+            mobileAlerts = events.sort((a, b) => new Date(b.time) - new Date(a.time));
+            currentAlertIndex = 0;
+
+            // Show first alert
+            showMobileAlert(0);
+
+            // Auto-cycle every 5 seconds if more than 1 alert
+            if (mobileAlerts.length > 1) {
+                alertSlideInterval = setInterval(() => {
+                    currentAlertIndex = (currentAlertIndex + 1) % mobileAlerts.length;
+                    showMobileAlert(currentAlertIndex);
+                }, 5000);
+            }
+        }
+
+        // Show specific alert by index
+        function showMobileAlert(index) {
+            if (!mobileAlerts || mobileAlerts.length === 0) return;
+
+            const alert = mobileAlerts[index];
+            const severity = alert.severity || 3;
+
+            // Add fade transition
+            const banner = document.getElementById('mobile-alert-banner');
+            banner.style.opacity = '0';
+
+            setTimeout(() => {
+                document.getElementById('mobile-alert-title').textContent = alert.title || 'Alert';
+                document.getElementById('mobile-alert-issuer').textContent = alert.source || 'USGS';
+
+                // Update slide counter if it exists
+                const slideCounter = document.getElementById('mobile-slide-counter');
+                if (slideCounter) {
+                    slideCounter.textContent = ` • ${index + 1}/${mobileAlerts.length}`;
+                }
+
+                // Set badge based on severity
+                const badge = document.getElementById('mobile-alert-badge');
+
+                if (severity >= 5) {
+                    badge.textContent = 'High';
+                    badge.className = 'alert-badge high';
+                    badge.style.background = '#fee2e2';
+                    badge.style.color = '#dc2626';
+                    banner.className = 'mobile-alert-banner alert-high';
+                } else if (severity >= 4) {
+                    badge.textContent = 'Severe';
+                    badge.className = 'alert-badge medium';
+                    badge.style.background = '#ffedd5';
+                    badge.style.color = '#ea580c';
+                    banner.className = 'mobile-alert-banner alert-medium';
+                } else {
+                    badge.textContent = 'Low';
+                    badge.className = 'alert-badge low';
+                    badge.style.background = '#dcfce7';
+                    badge.style.color = '#16a34a';
+                    banner.className = 'mobile-alert-banner';
+                }
+
+                // Update time and location
+                const time = alert.time ? new Date(alert.time).toLocaleString() : '--';
+                const location = alert.location || alert.area || '--';
+
+                document.getElementById('mobile-alert-time').textContent = time;
+                document.getElementById('mobile-alert-location').textContent = location;
+
+                banner.style.opacity = '1';
+            }, 300);
+        }
+
+        // Update mobile alert indicators counts
+        function updateMobileIndicators() {
+            const earthquakeCount = alertsData.categorized.earthquake?.length || 0;
+            const floodCount = alertsData.categorized.flood?.length || 0;
+            const stormCount = alertsData.categorized.severe_storm?.length || 0;
+            const tornadoCount = alertsData.categorized.tornado?.length || 0;
+
+            const mobileEarthquake = document.getElementById('mobile-count-earthquake');
+            const mobileFlood = document.getElementById('mobile-count-flood');
+            const mobileStorm = document.getElementById('mobile-count-storm');
+            const mobileTornado = document.getElementById('mobile-count-tornado');
+
+            if (mobileEarthquake) mobileEarthquake.textContent = earthquakeCount;
+            if (mobileFlood) mobileFlood.textContent = floodCount;
+            if (mobileStorm) mobileStorm.textContent = stormCount;
+            if (mobileTornado) mobileTornado.textContent = tornadoCount;
+        }
+
+        // Get user location for mobile header
+        function updateMobileLocation() {
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        try {
+                            // Use reverse geocoding (free OpenStreetMap Nominatim API)
+                            const lat = position.coords.latitude;
+                            const lon = position.coords.longitude;
+                            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                            const data = await response.json();
+
+                            const locationText = document.getElementById('mobile-location-text');
+                            const locationSubtext = document.getElementById('mobile-location-subtext');
+
+                            if (locationText && data.address) {
+                                locationText.textContent = data.address.city || data.address.town || data.address.village || 'Your Location';
+                                locationSubtext.textContent = data.address.road || data.address.suburb || data.address.county || '';
+                            }
+                        } catch (err) {
+                            console.log('Geocoding failed, using default location');
+                        }
+                    },
+                    (error) => {
+                        console.log('Geolocation denied or failed');
+                        document.getElementById('mobile-location-subtext').textContent = 'Enable location for alerts';
+                    },
+                    { timeout: 5000 }
+                );
+            }
+        }
+
+        // Initialize mobile features
+        updateMobileLocation();
 
         loadLiveUpdates();
         setInterval(loadLiveUpdates, 10 * 60 * 1000);

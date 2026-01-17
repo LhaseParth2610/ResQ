@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,162 +12,273 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
   <style>
-    #map { height: 85vh; width: 100%; border-radius: 8px; }
-    #directions-panel { height: 85vh; overflow-y: auto; padding: 15px; background: white; border-radius: 8px; }
-    .controls-container { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-    .error-message { background: #FEE2E2; color: #DC2626; padding: 1rem; border-radius: 8px; display: none; }
-    .success-message { background: #D1FAE5; color: #059669; padding: 1rem; border-radius: 8px; display: none; }
+    #map {
+      height: 85vh;
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    #directions-panel {
+      height: 85vh;
+      overflow-y: auto;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+    }
+
+    .controls-container {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .error-message {
+      background: #FEE2E2;
+      color: #DC2626;
+      padding: 1rem;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .success-message {
+      background: #D1FAE5;
+      color: #059669;
+      padding: 1rem;
+      border-radius: 8px;
+      display: none;
+    }
   </style>
 </head>
 
 <body class="bg-gray-100 min-h-screen">
 
-<div class="container mx-auto px-4 py-6">
-  <div class="controls-container">
-    <h2 class="text-2xl font-bold mb-4">Safe Route Finder</h2>
+  <div class="container mx-auto px-4 py-6">
+    <div class="controls-container">
+      <h2 class="text-2xl font-bold mb-4">Safe Route Finder</h2>
 
-    <div id="errorMessage" class="error-message"></div>
-    <div id="successMessage" class="success-message"></div>
+      <div id="errorMessage" class="error-message"></div>
+      <div id="successMessage" class="success-message"></div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-      <div>
-        <label class="block text-sm font-medium mb-2">Starting Point</label>
-        <div class="flex space-x-2">
-          <input id="start" class="flex-1 p-2 border rounded" placeholder="Enter starting point">
-          <button onclick="useCurrentLocation()" class="bg-blue-500 text-white px-4 py-2 rounded">📍 Current</button>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-sm font-medium mb-2">Starting Point</label>
+          <div class="flex space-x-2">
+            <input id="start" class="flex-1 p-2 border rounded" placeholder="Enter starting point">
+            <button onclick="useCurrentLocation()" class="bg-blue-500 text-white px-4 py-2 rounded">📍 Current</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">Destination</label>
+          <input id="destination" class="w-full p-2 border rounded" placeholder="Enter destination">
         </div>
       </div>
 
-      <div>
-        <label class="block text-sm font-medium mb-2">Destination</label>
-        <input id="destination" class="w-full p-2 border rounded" placeholder="Enter destination">
+      <div class="flex justify-between items-center">
+        <button onclick="calculateSafeRoute()" class="bg-green-500 text-white px-6 py-2 rounded">
+          Find Safe Route
+        </button>
+
+        <select id="travelMode" class="p-2 border rounded text-sm">
+          <option value="DRIVING">🚗 Driving</option>
+          <option value="WALKING">🚶 Walking</option>
+          <option value="BICYCLING">🚲 Bicycling</option>
+        </select>
       </div>
     </div>
 
-    <div class="flex justify-between items-center">
-      <button onclick="calculateSafeRoute()" class="bg-green-500 text-white px-6 py-2 rounded">
-        Find Safe Route
-      </button>
-
-      <select id="travelMode" class="p-2 border rounded text-sm">
-        <option value="DRIVING">🚗 Driving</option>
-        <option value="WALKING">🚶 Walking</option>
-        <option value="BICYCLING">🚲 Bicycling</option>
-      </select>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2">
+        <div id="map"></div>
+      </div>
+      <div>
+        <div id="directions-panel"></div>
+      </div>
     </div>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-    <div class="lg:col-span-2"><div id="map"></div></div>
-    <div><div id="directions-panel"></div></div>
-  </div>
-</div>
+  <script>
+    /* ---------------- GOOGLE MAPS LOADER ---------------- */
+    async function loadGoogleMaps() {
+      const res = await fetch('/api/maps/key');
+      const data = await res.json();
 
-<script>
-/* ---------------- GOOGLE MAPS LOADER ---------------- */
-async function loadGoogleMaps() {
-  const res = await fetch('/api/maps/key');
-  const data = await res.json();
+      if (!data.api_key) {
+        alert("Google Maps API key missing");
+        return;
+      }
 
-  if (!data.api_key) {
-    alert("Google Maps API key missing");
-    return;
-  }
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${data.api_key}&libraries=places,geometry&callback=initMap`;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+    loadGoogleMaps();
 
-  const script = document.createElement('script');
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${data.api_key}&libraries=places,geometry&callback=initMap`;
-  script.async = true;
-  script.defer = true;
-  document.head.appendChild(script);
-}
-loadGoogleMaps();
+    /* ---------------- MAP LOGIC ---------------- */
+    let map, directionsService, directionsRenderer;
+    let dangerZonePolygons = [];
+    let startAutocomplete, destAutocomplete;
 
-/* ---------------- MAP LOGIC ---------------- */
-let map, directionsService, directionsRenderer;
-let dangerZonePolygons = [];
-let startAutocomplete, destAutocomplete;
+    function showError(msg) {
+      const el = document.getElementById("errorMessage");
+      el.innerText = msg;
+      el.style.display = "block";
+      setTimeout(() => el.style.display = "none", 4000);
+    }
 
-function showError(msg) {
-  const el = document.getElementById("errorMessage");
-  el.innerText = msg;
-  el.style.display = "block";
-  setTimeout(() => el.style.display = "none", 4000);
-}
+    function showSuccess(msg) {
+      const el = document.getElementById("successMessage");
+      el.innerText = msg;
+      el.style.display = "block";
+      setTimeout(() => el.style.display = "none", 4000);
+    }
 
-function showSuccess(msg) {
-  const el = document.getElementById("successMessage");
-  el.innerText = msg;
-  el.style.display = "block";
-  setTimeout(() => el.style.display = "none", 4000);
-}
-
-function initMap() {
-  map = new google.maps.Map(document.getElementById("map"), {
-    zoom: 13,
-    center: { lat: 18.528756, lng: 73.864157 }
-  });
-
-  directionsService = new google.maps.DirectionsService();
-  directionsRenderer = new google.maps.DirectionsRenderer({
-    map,
-    panel: document.getElementById("directions-panel")
-  });
-
-  startAutocomplete = new google.maps.places.Autocomplete(document.getElementById("start"));
-  destAutocomplete = new google.maps.places.Autocomplete(document.getElementById("destination"));
-
-  fetchDangerZones();
-  showSuccess("Map loaded successfully");
-}
-
-/* ---------------- DANGER ZONES ---------------- */
-function fetchDangerZones() {
-  fetch("/danger_zones")
-    .then(res => res.json())
-    .then(zones => {
-      zones.forEach(z => {
-        const circle = new google.maps.Circle({
-          center: { lat: z.latitude, lng: z.longitude },
-          radius: 300,
-          fillColor: "#FF0000",
-          fillOpacity: 0.35,
-          strokeColor: "#FF0000",
-          map
-        });
-        dangerZonePolygons.push(circle);
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 13,
+        center: { lat: 18.528756, lng: 73.864157 }
       });
-    });
-}
 
-/* ---------------- LOCATION ---------------- */
-function useCurrentLocation() {
-  navigator.geolocation.getCurrentPosition(pos => {
-    const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-    map.setCenter(loc);
-    document.getElementById("start").value = `${loc.lat}, ${loc.lng}`;
-  }, () => showError("Geolocation failed"));
-}
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer({
+        map,
+        panel: document.getElementById("directions-panel")
+      });
 
-/* ---------------- ROUTING ---------------- */
-async function calculateSafeRoute() {
-  const start = document.getElementById("start").value;
-  const dest = document.getElementById("destination").value;
-  if (!start || !dest) return showError("Enter both locations");
+      startAutocomplete = new google.maps.places.Autocomplete(document.getElementById("start"));
+      destAutocomplete = new google.maps.places.Autocomplete(document.getElementById("destination"));
 
-  directionsService.route({
-    origin: start,
-    destination: dest,
-    travelMode: google.maps.TravelMode[
-      document.getElementById("travelMode").value
-    ],
-    provideRouteAlternatives: true
-  }, (res, status) => {
-    if (status !== "OK") return showError("Route failed");
-    directionsRenderer.setDirections(res);
-    showSuccess("Route calculated");
-  });
-}
-</script>
+      fetchDangerZones();
+      showSuccess("Map loaded successfully");
+    }
+
+    /* ---------------- DANGER ZONES ---------------- */
+    function fetchDangerZones() {
+      fetch("/danger_zones")
+        .then(res => res.json())
+        .then(zones => {
+          zones.forEach(z => {
+            const circle = new google.maps.Circle({
+              center: { lat: z.latitude, lng: z.longitude },
+              radius: 300,
+              fillColor: "#FF0000",
+              fillOpacity: 0.35,
+              strokeColor: "#FF0000",
+              map
+            });
+            dangerZonePolygons.push(circle);
+          });
+        });
+    }
+
+    /* ---------------- LOCATION ---------------- */
+    function useCurrentLocation() {
+      navigator.geolocation.getCurrentPosition(pos => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        map.setCenter(loc);
+        document.getElementById("start").value = `${loc.lat}, ${loc.lng}`;
+      }, () => showError("Geolocation failed"));
+    }
+
+    /* ---------------- ROUTING ---------------- */
+    async function calculateSafeRoute() {
+      const start = document.getElementById("start").value;
+      const dest = document.getElementById("destination").value;
+      if (!start || !dest) return showError("Enter both locations");
+
+      directionsService.route({
+        origin: start,
+        destination: dest,
+        travelMode: google.maps.TravelMode[
+          document.getElementById("travelMode").value
+        ],
+        provideRouteAlternatives: true
+      }, (res, status) => {
+        if (status !== "OK") return showError("Route failed");
+        directionsRenderer.setDirections(res);
+        showSuccess("Route calculated");
+      });
+    }
+  </script>
+
+  <!-- Mobile Bottom Navigation -->
+  <style>
+    @media (max-width: 768px) {
+      body {
+        padding-bottom: 80px;
+      }
+    }
+
+    .mobile-bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      padding: 8px 0;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+
+    .mobile-bottom-nav .nav-items {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .mobile-bottom-nav .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 12px;
+      color: #64748b;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 8px;
+    }
+
+    .mobile-bottom-nav .nav-item:hover,
+    .mobile-bottom-nav .nav-item.active {
+      color: #2563eb;
+      background: #eff6ff;
+    }
+
+    .mobile-bottom-nav .nav-item i {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" />
+  <nav class="mobile-bottom-nav">
+    <div class="nav-items">
+      <a href="{{ url_for('index') }}" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+      </a>
+      <a href="{{ url_for('safe_route') }}" class="nav-item active">
+        <i class="fas fa-route"></i>
+        <span>Safe Route</span>
+      </a>
+      <a href="{{ url_for('alerts') }}" class="nav-item">
+        <i class="fas fa-bell"></i>
+        <span>Alerts</span>
+      </a>
+      <a href="{{ url_for('resource_map') }}" class="nav-item">
+        <i class="fas fa-campground"></i>
+        <span>Camps</span>
+      </a>
+      <a href="{{ url_for('report') }}" class="nav-item">
+        <i class="fas fa-edit"></i>
+        <span>Report</span>
+      </a>
+    </div>
+  </nav>
 
 </body>
+
 </html>

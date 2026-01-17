@@ -433,6 +433,10 @@ def broadcast():
 def safe_route():
     return render_template('safe_route.html')
 
+@app.route('/alerts')
+def alerts():
+    return render_template('alerts.html')
+
 import base64
 
 @app.route('/images/<location>')
