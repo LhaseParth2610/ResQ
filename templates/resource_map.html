@@ -42,6 +42,96 @@
             font-size: 11px; font-weight: 500; border-radius: 8px;
         }
         .mobile-bottom-nav .nav-item.active { color: #2563eb; background: #eff6ff; }
+
+        /* --- Map Overlay Styles (Matches Index) --- */
+        .map-title-overlay {
+            position: absolute; top: 15px; right: 15px; z-index: 10;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(4px);
+            padding: 8px 12px; border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            pointer-events: none;
+        }
+        .map-title-text {
+            font-size: 12px; font-weight: 800; color: #dc2626;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .live-dot {
+            width: 8px; height: 8px; background: #dc2626;
+            border-radius: 50%; 
+            animation: pulse-red 1.5s infinite;
+        }
+        @keyframes pulse-red {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* SOS Floating Button Style */
+        .mobile-sos-bar {
+            position: fixed;
+            bottom: 85px; /* Sits exactly above the Bottom Nav */
+            left: 20px;
+            right: 20px;
+            z-index: 999; /* High Z-index to float over map */
+        }
+
+        .mobile-sos-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); /* Red Gradient */
+            color: white;
+            padding: 16px 20px;
+            border-radius: 18px;
+            border: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.4); /* Glowing Red Shadow */
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .mobile-sos-btn:active {
+            transform: scale(0.98); /* Click effect */
+        }
+
+        .pulse-icon {
+            animation: sos-pulse 2s infinite;
+        }
+
+        @keyframes sos-pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        /* NEW: Custom Modal (Replaces standard Alert) */
+        .custom-modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6); z-index: 2000;
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.3s;
+        }
+        .custom-modal-box {
+            background: white; width: 85%; max-width: 320px;
+            border-radius: 24px; padding: 24px; text-align: center;
+            transform: scale(0.9); transition: transform 0.3s;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal-icon-circle {
+            width: 60px; height: 60px; background: #ecfdf5; color: #10b981;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 28px; margin: 0 auto 16px;
+        }
+        .modal-btn-ok {
+            background: #1e293b; color: white; width: 100%; padding: 14px;
+            border-radius: 14px; font-weight: 700; border: none; margin-top: 20px;
+        }
     </style>
 </head>
 
@@ -83,12 +173,43 @@
 
         <div class="flex-1 relative">
             <div id="map"></div>
+            
+            <div class="map-title-overlay">
+                <span class="map-title-text">
+                    <div class="live-dot"></div> DANGER ZONES ACTIVE
+                </span>
+            </div>
+
             <div id="loading" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 text-white">
                 <div class="text-center">
                     <i class="fas fa-spinner fa-spin text-4xl mb-2"></i>
                     <p>Calculating route...</p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="mobile-sos-bar">
+        <button id="sos-btn" class="mobile-sos-btn" onclick="triggerSOS()">
+            <span class="flex items-center gap-3">
+                <i class="fas fa-broadcast-tower pulse-icon"></i> 
+                <span id="sos-text">SOS Call</span>
+            </span>
+            <i class="fas fa-phone-alt"></i>
+        </button>
+    </div>
+
+    <div id="custom-modal" class="custom-modal-overlay">
+        <div class="custom-modal-box">
+            <div class="modal-icon-circle">
+                <i class="fas fa-check"></i>
+            </div>
+            <h3 style="font-size:18px; font-weight:800; margin-bottom:8px;">ACKNOWLEDGED</h3>
+            <p style="font-size:14px; color:#64748b; line-height:1.5;">
+                Emergency Signal Received.<br>
+                Your location has been shared with response teams.
+            </p>
+            <button id="ack-close-btn" type="button" class="modal-btn-ok">OK</button>
         </div>
     </div>
 
@@ -119,9 +240,8 @@
         let directionsRenderer;
         let allCamps = [];
         let userLocation = null;
-        let heatmap; // Variable for the heatmap layer
+        let heatmap;
 
-        // Icons configuration (Using FontAwesome colors logic mostly, but specific markers here)
         const icons = {
             'Medical': 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
             'Shelter': 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
@@ -130,11 +250,11 @@
         };
 
         function initMap() {
-            const defaultLoc = { lat: 20.5937, lng: 78.9629 };
+            // UPDATED COORDINATES & ZOOM: Pimpri-Chinchwad (Matches Index.html)
+            const defaultLoc = { lat: 18.6279, lng: 73.8004 }; 
 
-            // 1. Initialize Map with Clean Styles (Same as Index)
             map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 5,
+                zoom: 13, // UPDATED: Zoomed in for city view
                 center: defaultLoc,
                 mapTypeControl: false,
                 fullscreenControl: false,
@@ -144,7 +264,6 @@
                 ]
             });
 
-            // 2. Initialize Directions
             directionsService = new google.maps.DirectionsService();
             directionsRenderer = new google.maps.DirectionsRenderer({
                 map: map,
@@ -152,7 +271,7 @@
                 polylineOptions: { strokeColor: "#2563EB", strokeWeight: 5, strokeOpacity: 0.7 }
             });
 
-            // 3. FETCH & RENDER HEATMAP (The Index.html Feature)
+            // Heatmap Logic
             fetch("/danger_zones")
                 .then(response => response.json())
                 .then(data => {
@@ -165,7 +284,7 @@
                         data: heatmapData,
                         map: map,
                         radius: 35,
-                        opacity: 0.6, // Slightly transparent so we can see camp markers
+                        opacity: 0.6,
                         gradient: [
                             'rgba(0, 255, 0, 0)',
                             'rgba(255, 255, 0, 0.7)',
@@ -176,8 +295,19 @@
                 })
                 .catch(err => console.error("Error loading danger zones for heatmap:", err));
 
-            // 4. Fetch Camps Markers
             fetchCamps();
+            
+            // Auto-locate on load if user permits (Best match for Index behavior)
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                         const userLoc = { lat: position.coords.latitude, lng: position.coords.longitude };
+                         map.setCenter(userLoc);
+                         map.setZoom(13); // Ensure zoom stays consistent
+                    },
+                    () => {} // Fail silently if denied, stay on Pimpri default
+                );
+            }
         }
 
         async function fetchCamps() {
@@ -192,10 +322,9 @@
                     addMarker(camp);
                     bounds.extend({ lat: camp.latitude, lng: camp.longitude });
                 });
-
-                if (allCamps.length > 0) {
-                    map.fitBounds(bounds);
-                }
+                
+                // Note: Removed fitBounds here to enforce the "Zoom 13" view 
+                // unless the user clicks "Navigate to Nearest Camp"
             } catch (error) {
                 console.error('Error fetching camps:', error);
             }
@@ -208,7 +337,7 @@
                 position: { lat: camp.latitude, lng: camp.longitude },
                 map: map,
                 title: camp.name,
-                icon: { url: iconUrl } // Standard Google Markers
+                icon: { url: iconUrl }
             });
 
             const infoContent = `
@@ -276,13 +405,10 @@
                             animation: google.maps.Animation.DROP
                         });
 
-                        // Simple distance check
                         let closestCamp = null;
                         let minDist = Infinity;
                         
-                        // Use Geometry library or simple math
                         allCamps.forEach(camp => {
-                             // Simple Euclidean approximation for speed demo (Use Haversine in production)
                              const d = Math.sqrt(Math.pow(camp.latitude - userLocation.lat, 2) + Math.pow(camp.longitude - userLocation.lng, 2));
                              if(d < minDist) { minDist = d; closestCamp = camp; }
                         });
@@ -312,6 +438,100 @@
         }
 
         function checkAuth(e, url) { e.preventDefault(); window.location.href = url; }
+        
+        // --- SOS Button Logic (Corrected) ---
+        function triggerSOS() {
+            const btn = document.getElementById('sos-btn');
+            const text = document.getElementById('sos-text');
+            const modal = document.getElementById('custom-modal');
+
+            // 1. UI Feedback (Immediate)
+            if(btn) {
+                btn.disabled = true;
+                btn.style.background = "linear-gradient(135deg, #059669 0%, #10b981 100%)";
+                btn.style.boxShadow = "0 10px 25px rgba(16, 185, 129, 0.4)";
+                const pulse = btn.querySelector('.pulse-icon');
+                if(pulse) pulse.classList.remove('pulse-icon');
+            }
+            if(text) text.innerText = "Sending...";
+            
+            // 2. Get Real Location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const data = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            timestamp: new Date().toISOString()
+                        };
+
+                        // 3. Send Data to Python Backend
+                        fetch('/api/send_sos', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if(text) text.innerText = "Signal Sent!";
+                            setTimeout(() => {
+                                if(modal) {
+                                    modal.style.display = 'flex';
+                                    setTimeout(() => { 
+                                        modal.style.opacity = '1'; 
+                                        const box = modal.querySelector('.custom-modal-box');
+                                        if(box) box.style.transform = 'scale(1)'; 
+                                    }, 10);
+                                }
+                            }, 300);
+                        })
+                        .catch((error) => {
+                            console.error('Error:', error);
+                            alert("Connection Failed! Call 112 directly.");
+                            resetSOSButton();
+                        });
+                    },
+                    (error) => {
+                        alert("Location access denied. Cannot send SOS location.");
+                        resetSOSButton();
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+
+            // Auto-reset after 30s
+            setTimeout(resetSOSButton, 30000);
+        }
+
+        function resetSOSButton() {
+            const btn = document.getElementById('sos-btn');
+            const text = document.getElementById('sos-text');
+            if(btn) {
+                btn.disabled = false;
+                btn.style.background = "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)";
+                btn.style.boxShadow = "0 10px 25px rgba(220, 38, 38, 0.4)";
+                const icon = btn.querySelector('i');
+                if(icon) icon.classList.add('pulse-icon');
+            }
+            if(text) text.innerText = "SOS Call";
+        }
+
+        // --- OK Button Listener ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const closeBtn = document.getElementById('ack-close-btn');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    const modal = document.getElementById('custom-modal');
+                    const box = modal.querySelector('.custom-modal-box');
+                    if(modal) modal.style.opacity = '0';
+                    if(box) box.style.transform = 'scale(0.9)';
+                    setTimeout(() => {
+                        if(modal) modal.style.display = 'none';
+                    }, 300);
+                });
+            }
+        });
     </script>
 
     <script>
@@ -319,7 +539,6 @@
             .then(response => response.json())
             .then(data => {
                 const script = document.createElement('script');
-                // NOTE: Added &libraries=visualization here!
                 script.src = `https://maps.googleapis.com/maps/api/js?key=${data.api_key}&libraries=visualization&callback=initMap`;
                 script.async = true;
                 script.defer = true;

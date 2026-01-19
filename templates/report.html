@@ -311,6 +311,11 @@
 
 <body>
     <div class="report-container">
+        <div style="margin-bottom: 1.5rem;" data-aos="fade-down">
+            <a href="{{ url_for('index') }}" style="text-decoration: none; color: var(--text-dark); display: inline-flex; align-items: center; gap: 0.8rem; font-weight: 600; font-size: 1.1rem; background: rgba(255,255,255,0.5); padding: 0.8rem 1.2rem; border-radius: 12px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.3); transition: all 0.3s ease;" onmouseover="this.style.transform='translateX(-5px)'; this.style.background='rgba(255,255,255,0.8)'" onmouseout="this.style.transform='translateX(0)'; this.style.background='rgba(255,255,255,0.5)'">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </a>
+        </div>
         <script>
             {% if image_error %}
             alert("{{ image_error }}");

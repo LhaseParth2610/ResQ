@@ -105,6 +105,12 @@
             font-size: 20px;
             margin-bottom: 4px;
         }
+
+        /* Make the spin faster: 1 rotation = 1 second */
+        .fa-spin {
+            animation-duration: 1s !important;
+        }
+
     </style>
 </head>
 
@@ -117,9 +123,9 @@
                     <i class="fas fa-arrow-left text-xl"></i>
                 </a>
                 <h1 class="text-xl font-bold text-gray-800">Live Alerts</h1>
-                <button onclick="loadAlerts()" class="text-blue-600">
-                    <i class="fas fa-sync-alt text-xl"></i>
-                </button>
+                <button onclick="loadAlerts()" class="text-blue-600 hover:text-blue-800 transition-colors p-2 rounded-full hover:bg-blue-50">
+    <i id="refresh-icon" class="fas fa-sync-alt text-xl"></i>
+</button>
             </div>
         </div>
     </div>
@@ -158,43 +164,46 @@
         let currentFilter = 'all';
 
         async function loadAlerts() {
+            const icon = document.getElementById('refresh-icon');
+            const container = document.getElementById('alerts-container');
+            
+            // 1. START SPINNING
+            if(icon) icon.classList.add('fa-spin');
+
             try {
                 const res = await fetch('/api/live_updates');
                 const data = await res.json();
                 allAlerts = data.events || [];
                 renderAlerts();
             } catch (err) {
-                document.getElementById('alerts-container').innerHTML = `
-                    <div class="text-center py-8 text-red-500">
-                        <i class="fas fa-exclamation-circle text-3xl mb-3"></i>
-                        <p>Failed to load alerts</p>
-                    </div>
-                `;
+                console.error("Refresh failed:", err);
+                if(allAlerts.length === 0) {
+                     container.innerHTML = `
+                        <div class="text-center py-8 text-red-500">
+                            <i class="fas fa-exclamation-circle text-3xl mb-3"></i>
+                            <p>Failed to load alerts</p>
+                        </div>
+                    `;
+                }
+            } finally {
+                // 2. STOP SPINNING AFTER 2 SECONDS (2 spins x 1s/spin)
+                setTimeout(() => {
+                    if(icon) icon.classList.remove('fa-spin');
+                }, 2000);
             }
         }
 
         function filterAlerts(category) {
             currentFilter = category;
-
-            // Update tab styles
             document.querySelectorAll('.category-tab').forEach(tab => {
-                if (tab.dataset.category === category) {
-                    tab.classList.add('active');
-                } else {
-                    tab.classList.remove('active');
-                }
+                tab.classList.toggle('active', tab.dataset.category === category);
             });
-
             renderAlerts();
         }
 
         function renderAlerts() {
             const container = document.getElementById('alerts-container');
-
-            let filtered = allAlerts;
-            if (currentFilter !== 'all') {
-                filtered = allAlerts.filter(a => a.category === currentFilter);
-            }
+            let filtered = currentFilter === 'all' ? allAlerts : allAlerts.filter(a => a.category === currentFilter);
 
             if (filtered.length === 0) {
                 container.innerHTML = `
@@ -232,12 +241,14 @@
             }).join('');
         }
 
-        // Load alerts on page load
-        loadAlerts();
-
-        // Auto-refresh every 5 minutes
-        setInterval(loadAlerts, 5 * 60 * 1000);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAlerts(); // Run immediately
+            
+            // 3. REFRESH EVERY 5 SECONDS
+            setInterval(loadAlerts, 5000); 
+        });
     </script>
+
     <nav class="mobile-bottom-nav">
         <div class="nav-items">
             <a href="{{ url_for('index') }}" class="nav-item">

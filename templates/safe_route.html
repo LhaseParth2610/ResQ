@@ -52,7 +52,12 @@
 </head>
 
 <body class="bg-gray-100 min-h-screen">
-
+  <div class="bg-white border-b border-gray-200 px-4 py-3 shadow-sm sticky top-0 z-50">
+      <a href="{{ url_for('index') }}" class="inline-flex items-center text-gray-600 hover:text-blue-600 transition">
+          <i class="fas fa-arrow-left mr-2"></i>
+          <span class="font-medium">Back to Home</span>
+      </a>
+  </div>
   <div class="container mx-auto px-4 py-6">
     <div class="controls-container">
       <h2 class="text-2xl font-bold mb-4">Safe Route Finder</h2>
