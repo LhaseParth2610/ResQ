@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danger Zones</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -15,40 +17,86 @@
             padding: 20px;
         }
 
+        /* NEW: Improved Heading Style */
+        h1.map-heading {
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 1.8rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        /* NEW: Floating Back Button */
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            color: #333;
+            text-decoration: none;
+            z-index: 1000;
+            transition: transform 0.2s ease, background 0.2s;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .back-button:hover {
+            transform: scale(1.05);
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+        }
+
         #map {
             width: 100%;
             height: 80vh;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 20px; /* Increased radius for modern look */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Softer shadow */
+            border: 4px solid white; /* White frame effect */
         }
 
         .legend {
             background: white;
             padding: 15px;
             margin: 10px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #eee;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            font-family: 'Poppins', sans-serif;
         }
 
         .legend h4 {
-            margin: 0 0 10px;
-            font-size: 16px;
-            color: #333;
-            font-weight: 600;
+            margin: 0 0 12px;
+            font-size: 14px;
+            color: #1a202c;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            margin: 5px 0;
+            margin: 8px 0;
+            font-size: 13px;
+            color: #4a5568;
         }
 
         .legend-color {
-            width: 20px;
-            height: 20px;
-            margin-right: 10px;
-            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            margin-right: 12px;
+            border-radius: 6px; /* Rounded squares instead of circles */
         }
 
         .info-window {
@@ -57,31 +105,68 @@
 
         .carousel-item img {
             border-radius: 8px;
-            max-height: 320px; /* Increased height */
+            max-height: 320px;
             object-fit: cover;
         }
+        
+        /* Mobile adjustment to prevent button overlapping title */
+        @media (max-width: 576px) {
+            h1.map-heading {
+                font-size: 1.4rem;
+                margin-top: 50px; /* Pushes title down below button on small screens */
+            }
+        }
     </style>
-    <script src="https://maps.googleapis.com/maps/api/js?key=yOUR_API&libraries=visualization"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
         let map, heatmap;
 
+        async function loadGoogleMapsScript() {
+            try {
+                const response = await fetch('/api/maps/key');
+                const data = await response.json();
+                const apiKey = data.api_key;
+
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=visualization`;
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+                script.onload = () => {
+                    getUserLocation();
+                };
+            } catch (error) {
+                console.error('Could not fetch Google Maps API key.', error);
+            }
+        }
+
         function initMap(userLat, userLng) {
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 12,
                 center: { lat: userLat, lng: userLng },
                 mapTypeControl: false,
-                streetViewControl: false
+                streetViewControl: false,
+                fullscreenControl: false,
+                styles: [
+                    { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] } // Cleaner map
+                ]
             });
 
-            // Mark user's location
+            // Mark user's location (Blue Dot)
             new google.maps.Marker({
                 position: { lat: userLat, lng: userLng },
                 map: map,
                 title: "Your Location",
-                icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 10,
+                    fillColor: "#4285F4",
+                    fillOpacity: 1,
+                    strokeColor: "white",
+                    strokeWeight: 2,
+                }
             });
 
             // Fetch danger zones from Flask
@@ -104,7 +189,6 @@
                             'rgba(255, 255, 0, 0.7)',
                             'rgba(255, 165, 0, 0.8)',
                             'rgba(255, 0, 0, 1)',
-                             // Added more gradients
                         ],
                         radius: 35,
                         opacity: 0.8
@@ -119,10 +203,10 @@
                                 title: `${zone.location} - Reports: ${zone.report_count}`,
                                 icon: {
                                     url: "{{ url_for('static', filename='custom-icon.png') }}",
-                                    scaledSize: new google.maps.Size(100, 100),
+                                    scaledSize: new google.maps.Size(40, 40),
                                     anchor: new google.maps.Point(20, 20)
                                 },
-                                opacity: 0
+                                opacity: 0 // Invisible marker (clickable area for heatmap)
                             });
 
                             // Add click listener for images
@@ -160,7 +244,6 @@
                                         
                                         infoWindow.open(map, marker);
                                         
-                                        // Initialize carousel after info window opens
                                         google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
                                             $(`#carousel-${zone.id}`).carousel();
                                         });
@@ -179,10 +262,6 @@
                 <div class="legend-item">
                     <div class="legend-color" style="background: #4285F4"></div>
                     <span>Your Location</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #FF0000"></div>
-                    <span>Danger Zones</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: linear-gradient(to right, #00ff00, #ff0000)"></div>
@@ -214,8 +293,14 @@
         }
     </script>
 </head>
-<body onload="getUserLocation()">
-    <h1 class="text-center mb-4">Danger Zones Near You</h1>
+<body onload="loadGoogleMapsScript()">
+    
+    <a href="javascript:history.back()" class="back-button">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+
+    <h1 class="map-heading">Danger Zones Near You</h1>
+    
     <div id="map"></div>
 </body>
 </html>

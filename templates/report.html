@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -174,17 +175,17 @@
             .report-container {
                 padding: 2rem 1rem;
             }
-            
+
             .report-card {
                 padding: 1.8rem;
             }
-            
+
             .report-header h1 {
                 font-size: 1.8rem;
                 flex-direction: column;
                 gap: 0.5rem;
             }
-            
+
             .form-textarea {
                 padding: 1rem;
             }
@@ -196,6 +197,7 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -306,8 +308,14 @@
         }
     </style>
 </head>
+
 <body>
     <div class="report-container">
+        <script>
+            {% if image_error %}
+            alert("{{ image_error }}");
+            {% endif %}
+        </script>
         <div class="report-card" data-aos="zoom-in">
             <div class="report-header">
                 <h1>
@@ -323,13 +331,9 @@
                         <i class="fas fa-comment-medical"></i>
                         Incident Description
                     </label>
-                    <textarea 
-                        id="description" 
-                        name="description" 
-                        class="form-textarea" 
+                    <textarea id="description" name="description" class="form-textarea"
                         placeholder="Describe the disaster type, severity, and any immediate dangers..."
-                        required
-                    ></textarea>
+                        required></textarea>
                 </div>
 
                 <div class="form-group">
@@ -337,13 +341,8 @@
                         <i class="fas fa-map-marker-alt"></i>
                         Location Details
                     </label>
-                    <input 
-                        type="text" 
-                        id="location" 
-                        name="location" 
-                        class="form-input"
-                        placeholder="Enter exact location or landmark..."
-                    >
+                    <input type="text" id="location" name="location" class="form-input"
+                        placeholder="Enter exact location or landmark...">
                     <span class="input-hint">We'll automatically detect location if not provided</span>
                 </div>
 
@@ -353,15 +352,9 @@
                         Upload Image
                     </label>
                     <!-- Hidden file input that will be used to store the captured image -->
-                    <input 
-                        type="file" 
-                        id="image" 
-                        name="image" 
-                        class="form-input"
-                        accept="image/*"
-                        style="display: none"
-                    >
-                    
+                    <input type="file" id="image" name="image" class="form-input" accept="image/*"
+                        style="display: none">
+
                     <!-- Camera options -->
                     <div class="camera-options">
                         <button type="button" class="camera-btn" id="open-camera">
@@ -371,12 +364,7 @@
                             <button type="button" class="camera-btn">
                                 <i class="fas fa-upload"></i> Upload File
                             </button>
-                            <input 
-                                type="file" 
-                                id="file-upload" 
-                                accept="image/*"
-                                onchange="handleFileUpload(this)"
-                            >
+                            <input type="file" id="file-upload" accept="image/*" onchange="handleFileUpload(this)">
                         </div>
                     </div>
 
@@ -399,10 +387,11 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Preview of selected or captured image -->
                     <div id="image-preview" style="display: none; margin-top: 1rem; text-align: center;">
-                        <img id="preview-img" src="" alt="Image preview" style="max-width: 100%; max-height: 300px; border-radius: 10px;">
+                        <img id="preview-img" src="" alt="Image preview"
+                            style="max-width: 100%; max-height: 300px; border-radius: 10px;">
                         <button type="button" class="camera-btn" id="remove-image" style="margin-top: 0.5rem;">
                             <i class="fas fa-trash"></i> Remove
                         </button>
@@ -437,20 +426,20 @@
         const imagePreview = document.getElementById('image-preview');
         const previewImg = document.getElementById('preview-img');
         const removeImageBtn = document.getElementById('remove-image');
-        
+
         let stream;
         let imageCapture;
-        
+
         // Open camera
         openCameraBtn.addEventListener('click', async () => {
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
+                stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'environment' },
-                    audio: false 
+                    audio: false
                 });
                 cameraView.srcObject = stream;
                 cameraContainer.style.display = 'flex';
-                
+
                 const track = stream.getVideoTracks()[0];
                 imageCapture = new ImageCapture(track);
             } catch (error) {
@@ -458,7 +447,7 @@
                 console.error('Error accessing camera:', error);
             }
         });
-        
+
         // Capture photo
         captureBtn.addEventListener('click', async () => {
             try {
@@ -466,81 +455,81 @@
                 capturedImage.src = URL.createObjectURL(blob);
                 capturedImage.style.display = 'block';
                 cameraView.style.display = 'none';
-                
+
                 captureBtn.style.display = 'none';
                 retryBtn.style.display = 'inline-flex';
                 usePhotoBtn.style.display = 'inline-flex';
-                
+
                 // Store blob for later use
                 window.capturedBlob = blob;
             } catch (error) {
                 console.error('Error capturing photo:', error);
             }
         });
-        
+
         // Retry photo
         retryBtn.addEventListener('click', () => {
             capturedImage.style.display = 'none';
             cameraView.style.display = 'block';
-            
+
             captureBtn.style.display = 'inline-flex';
             retryBtn.style.display = 'none';
             usePhotoBtn.style.display = 'none';
         });
-        
+
         // Use photo
         usePhotoBtn.addEventListener('click', () => {
             // Convert blob to File and set to the file input
             const file = new File([window.capturedBlob], "captured-image.jpg", { type: "image/jpeg" });
-            
+
             // Create a FileList-like object
             const dataTransfer = new DataTransfer();
             dataTransfer.items.add(file);
             imageInput.files = dataTransfer.files;
-            
+
             // Show in the preview
             previewImg.src = URL.createObjectURL(file);
             imagePreview.style.display = 'block';
-            
+
             // Close camera
             closeCamera();
         });
-        
+
         // Close camera
         closeCameraBtn.addEventListener('click', closeCamera);
-        
+
         function closeCamera() {
             cameraContainer.style.display = 'none';
-            
+
             // Reset camera UI
             capturedImage.style.display = 'none';
             cameraView.style.display = 'block';
             captureBtn.style.display = 'inline-flex';
             retryBtn.style.display = 'none';
             usePhotoBtn.style.display = 'none';
-            
+
             // Stop all tracks
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
             }
         }
-        
+
         // Handle file upload
         function handleFileUpload(input) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
-                
+
                 // Copy to the main image input
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(file);
                 imageInput.files = dataTransfer.files;
-                
+
                 // Show preview
                 previewImg.src = URL.createObjectURL(file);
                 imagePreview.style.display = 'block';
             }
         }
-        
+
         // Remove image
         removeImageBtn.addEventListener('click', () => {
             imageInput.value = '';
@@ -548,5 +537,84 @@
             previewImg.src = '';
         });
     </script>
+
+    <!-- Mobile Bottom Navigation -->
+    <style>
+        @media (max-width: 768px) {
+            body {
+                padding-bottom: 80px;
+            }
+        }
+
+        .mobile-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 8px 0;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+        }
+
+        .mobile-bottom-nav .nav-items {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .mobile-bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 500;
+            border-radius: 8px;
+        }
+
+        .mobile-bottom-nav .nav-item:hover,
+        .mobile-bottom-nav .nav-item.active {
+            color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .mobile-bottom-nav .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+    </style>
+    <nav class="mobile-bottom-nav">
+        <div class="nav-items">
+            <a href="{{ url_for('index') }}" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+
+            <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')" class="nav-item">
+                <i class="fas fa-edit"></i>
+                <span>Report</span>
+            </a>
+
+            <a href="{{ url_for('alerts') }}" class="nav-item">
+                <i class="fas fa-bell"></i>
+                <span>Alerts</span>
+            </a>
+
+            <a href="{{ url_for('resource_map') }}" class="nav-item">
+                <i class="fas fa-campground"></i>
+                <span>Camps</span>
+            </a>
+
+            <a href="#" onclick="checkAuth(event, '{{ url_for('safe_route') }}')" class="nav-item">
+                <i class="fas fa-route"></i>
+                <span>Safe Route</span>
+            </a>
+        </div>
+    </nav>
 </body>
+
 </html>

@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import spacy
 import requests
@@ -11,18 +10,20 @@ from flask_migrate import Migrate
 from functools import wraps  # Added for the require_authority decorator
 import logging
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime,timedelta
 import time
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 import os
-from cnn_model.utils import classify_image
 from dotenv import load_dotenv
-import os
+from llm_vision import is_disaster_image
+from usgs_noaa import fetch_usgs_earthquakes, fetch_noaa_alerts
+load_dotenv()
 
+# Import models and db instance
+# from models import db, User, Report, DangerZone, BroadcastHistory
+from models import db, User, Report, DangerZone, BroadcastHistory, ResourceCamp 
 # Load environment variables at the top of app.py
-
-
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config['SECRET_KEY'] = 'your_secret_key_here'
-app.config['SQLALCHEMY_DATABASE_URI'] = "Your_database_uri"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:root@localhost/disaster_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configure Flask-Mail
@@ -38,7 +39,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'parthlhase49@gmail.com'
-app.config['MAIL_PASSWORD'] = "MAIL_PASS"
+app.config['MAIL_PASSWORD'] = "tgbc ffqi hqol qylv"
 
 mail = Mail(app)
 
@@ -47,13 +48,18 @@ from flask_caching import Cache
 cache = Cache(config={'CACHE_TYPE': 'simple'})
 cache.init_app(app)
 
-db = SQLAlchemy(app)
+# Initialize extensions
+db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 migrate = Migrate(app, db)
 
 # Load NLP model
 nlp = spacy.load("en_core_web_trf")
+
+@app.route('/api/maps/key')
+def get_maps_api_key():
+    return jsonify({'api_key': os.getenv('GOOGLE_MAPS_API_KEY')})
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -69,46 +75,6 @@ def require_authority(f):
             return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
-
-# Database Models (unchanged)
-class User(UserMixin, db.Model):
-    __tablename__ = 'user'  # Keep your existing table name
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(50), nullable=False, server_default='user')
-
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-    def __repr__(self):
-        return f'<User {self.username}>'
-
-class Report(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    description = db.Column(db.Text, nullable=False)
-    location = db.Column(db.String(255))
-    disaster_type = db.Column(db.String(50))
-    extracted_locations = db.Column(db.Text)
-    image = db.Column(db.LargeBinary, nullable=True)
-    created_at = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)  # Timestamp added
-
-class DangerZone(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    location = db.Column(db.String(255), nullable=False)
-    latitude = db.Column(db.Float)
-    longitude = db.Column(db.Float)
-    report_count = db.Column(db.Integer, default=1)
-
-class BroadcastHistory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    message = db.Column(db.Text, nullable=False)
-    location = db.Column(db.String(255), nullable=False)
-    timestamp = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
 
 # Ensure tables exist
 with app.app_context():
@@ -127,9 +93,25 @@ def classify_report(text):
 
 # Extract location entities using spaCy (unchanged)
 def extract_entities(text):
+    logger.debug(f"Extracting entities from text: {text}")
     doc = nlp(text)
+    
+    # Get all entities and their labels
+    all_entities = [(ent.text, ent.label_) for ent in doc.ents]
+    logger.debug(f"All entities found: {all_entities}")
+    
+    # Look for location entities
     locations = {ent.text for ent in doc.ents if ent.label_ in ("GPE", "LOC", "FAC")}
-    return ", ".join(locations)
+    logger.debug(f"Location entities found: {locations}")
+    
+    # If no locations found by spaCy, try to extract from the location field
+    if not locations:
+        logger.debug("No locations found by spaCy, will use manual location field")
+        return ""
+    
+    result = ", ".join(locations)
+    logger.debug(f"Final extracted locations: {result}")
+    return result
 
 # Weather API helper function
 @cache.cached(timeout=1800)  # Cache for 30 minutes
@@ -188,14 +170,15 @@ def send_automated_broadcast(zone, weather):
 scheduler = BackgroundScheduler()
 @scheduler.scheduled_job('interval', minutes=15)  # Check every 15 minutes (adjust as needed)
 def check_weather_and_broadcast():
-    zones = DangerZone.query.all()
-    if not zones:
-        logger.warning("No danger zones found for automated broadcast check.")
-        return
+    with app.app_context():
+        zones = DangerZone.query.all()
+        if not zones:
+            logger.warning("No danger zones found for automated broadcast check.")
+            return
 
-    for zone in zones:
-        weather = get_weather(zone.location)
-        send_automated_broadcast(zone, weather)
+        for zone in zones:
+            weather = get_weather(zone.location)
+            send_automated_broadcast(zone, weather)
 
 # Start the scheduler when the app starts
 def start_scheduler():
@@ -212,49 +195,28 @@ with app.app_context():
     start_scheduler()
 atexit.register(shutdown_scheduler)
 
-def fetch_gdacs_events():
-    """
-    Fetch and parse the GDACS RSS feed.
-    Returns a list of disaster events (filtered for India).
-    """
-    gdacs_url = "https://www.gdacs.org/xml/rss.xml"
-    try:
-        response = requests.get(gdacs_url)
-        if response.status_code != 200:
-            print("Error fetching GDACS feed:", response.status_code)
-            return []
-        xml_content = response.content
-        root = ET.fromstring(xml_content)
-        channel = root.find('channel')
-        items = channel.findall('item')
-        events = []
-        # Define georss namespace
-        namespace = {'georss': 'http://www.georss.org/georss'}
-        for item in items:
-            title = item.find('title').text if item.find('title') is not None else ""
-            description = item.find('description').text if item.find('description') is not None else ""
-            pubDate = item.find('pubDate').text if item.find('pubDate') is not None else ""
-            geo_point = item.find('georss:point', namespace)
-            if geo_point is not None:
-                coords = geo_point.text.split()
-                if len(coords) == 2:
-                    try:
-                        lat, lon = float(coords[0]), float(coords[1])
-                    except Exception:
-                        continue
-                    # Filter for events in India (approx lat: 6-37, lon: 68-98)
-                    if 6.0 <= lat <= 37.0 and 68.0 <= lon <= 98.0:
-                        events.append({
-                            'title': title,
-                            'description': description,
-                            'pubDate': pubDate,
-                            'latitude': lat,
-                            'longitude': lon
-                        })
-        return events
-    except Exception as e:
-        print("Error in fetch_gdacs_events:", e)
-        return []
+
+live_cache = {
+    "events": [],
+    "last_updated": None
+}
+
+def refresh_live_updates():
+    usgs = fetch_usgs_earthquakes()
+    noaa = fetch_noaa_alerts()
+
+    live_cache["events"] = usgs + noaa
+    live_cache["last_updated"] = datetime.utcnow()
+
+with app.app_context():
+    refresh_live_updates()
+
+
+@scheduler.scheduled_job("interval", minutes=10)
+def scheduled_live_updates():
+    refresh_live_updates()
+
+
 # Routes (unchanged except for /broadcast)
 @app.route('/')
 def home():
@@ -304,6 +266,11 @@ def login():
 
     return render_template('login.html')
 
+@app.route("/api/live_updates")
+def live_updates():
+    return jsonify(live_cache)
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -345,6 +312,8 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+
+
 @app.route('/report', methods=['GET', 'POST'])
 @login_required
 def report():
@@ -355,20 +324,16 @@ def report():
         disaster_type = classify_report(description)
         image_file = request.files['image']
         
-        if image_file:
-            image_path = f'static/uploads/{image_file.filename}'
-            image_file.save(image_path)
-            classification = classify_image(image_path)
+        image = None
+        if image_file and image_file.filename:
+            image_data = image_file.read()
             
-            if classification == 'not disaster':
-                flash('The uploaded image is not related to a disaster.', 'danger')
-                os.remove(image_path)
-                return redirect(url_for('index'))
+            # Verify the image with the LLM
+            if not is_disaster_image(image_data):
+                error_message = 'The uploaded image does not appear to be a valid disaster-related photo.'
+                return render_template('report.html', image_error=error_message)
             
-            with open(image_path, 'rb') as img_file:
-                image = img_file.read()
-        else:
-            image = None
+            image = image_data
 
         # Store report in database
         new_report = Report(
@@ -382,18 +347,26 @@ def report():
         db.session.commit()
 
         # Process danger zones
+        locations_to_process = []
         if extracted_locations:
-            locations_list = extracted_locations.split(", ")
-            for loc in locations_list:
-                lat, lng = get_coordinates(loc)
+            locations_to_process.extend(extracted_locations.split(", "))
+        elif location_field:
+            locations_to_process.append(location_field)
+        
+        for loc in locations_to_process:
+            if loc.strip():
+                lat, lng = get_coordinates(loc.strip())
                 if lat and lng:
-                    existing_zone = DangerZone.query.filter_by(location=loc).first()
+                    existing_zone = DangerZone.query.filter_by(location=loc.strip()).first()
                     if existing_zone:
-                        existing_zone.report_count += 1  # Increase count
+                        existing_zone.report_count += 1
                     else:
-                        new_zone = DangerZone(location=loc, latitude=lat, longitude=lng, report_count=1)
+                        new_zone = DangerZone(location=loc.strip(), latitude=lat, longitude=lng, report_count=1)
                         db.session.add(new_zone)
-            db.session.commit()
+                else:
+                    logger.warning(f"Could not get coordinates for location: {loc.strip()}")
+        
+        db.session.commit()
 
         return redirect(url_for('index'))
 
@@ -425,7 +398,8 @@ def sos():
     predefined_message = "SOS! Send help immediately. I am in danger at this location."
 
     user_email = current_user.email
-    msg = Message('SOS Alert', sender="parthlhase49@gmail.com", recipients=['prajwalkumbhar2909@gmail.com'])
+    msg = Message('SOS Alert', sender="parthlhase49@gmail.com", recipients=["prajwalkumbhar2909@gmail.com"])
+    #prajwalkumbhar2909@gmail.com
     msg.body = f'{predefined_message} \n\nUser: {current_user.username} ({user_email}) \nLocation: {user_location}'
 
     try:
@@ -433,7 +407,8 @@ def sos():
         flash('SOS alert sent to authorities', 'success')
         return redirect(url_for('index'))
     except Exception as e:
-        flash(f"An error occurred: {str(e)}", 'danger')
+        logger.error(f"SOS email failed to send: {e}")
+        flash("An error occurred while sending the SOS alert.", 'danger')
         return redirect(url_for('index'))
 
 @app.route('/broadcast', methods=['GET', 'POST'])
@@ -458,13 +433,73 @@ def broadcast():
 def safe_route():
     return render_template('safe_route.html')
 
+@app.route('/alerts')
+def alerts():
+    return render_template('alerts.html')
+
 import base64
 
 @app.route('/images/<location>')
 def get_images(location):
-    reports = Report.query.filter(Report.extracted_locations.contains(location)).all()
-    images = [base64.b64encode(report.image).decode('utf-8') for report in reports if report.image]
+    """Get images for a specific location"""
+    logger.debug(f"Fetching images for location: {location}")
+    
+    # Try multiple ways to match locations
+    reports = []
+    
+    # Method 1: Exact match in extracted_locations
+    reports.extend(Report.query.filter(Report.extracted_locations.contains(location)).all())
+    
+    # Method 2: Location field match
+    reports.extend(Report.query.filter(Report.location.contains(location)).all())
+    
+    # Method 3: Case-insensitive search
+    reports.extend(Report.query.filter(Report.extracted_locations.ilike(f'%{location}%')).all())
+    
+    # Remove duplicates based on report ID
+    unique_reports = {report.id: report for report in reports}.values()
+    
+    logger.debug(f"Found {len(unique_reports)} reports for location: {location}")
+    
+    images = []
+    for report in unique_reports:
+        if report.image:
+            logger.debug(f"Processing image for report {report.id}")
+            # Convert binary data to base64 for display
+            image_b64 = base64.b64encode(report.image).decode('utf-8')
+            images.append(image_b64)
+    
+    logger.debug(f"Returning {len(images)} images for location: {location}")
     return jsonify(images)
+
+@app.route('/image/<int:report_id>')
+def get_image(report_id):
+    """Serve individual images with proper headers"""
+    report = Report.query.get_or_404(report_id)
+    if report.image:
+        # Determine image type (you might want to store this in the database)
+        # For now, we'll assume JPEG
+        response = app.response_class(report.image, mimetype='image/jpeg')
+        return response
+    else:
+        return "Image not found", 404
+
+@app.route('/images_data/<location>')
+def get_images_data(location):
+    """Get images with metadata for the map"""
+    reports = Report.query.filter(Report.extracted_locations.contains(location)).all()
+    images_data = []
+    for report in reports:
+        if report.image:
+            image_b64 = base64.b64encode(report.image).decode('utf-8')
+            images_data.append({
+                'id': report.id,
+                'image': image_b64,
+                'description': report.description,
+                'disaster_type': report.disaster_type,
+                'created_at': report.created_at.isoformat() if report.created_at else None
+            })
+    return jsonify(images_data)
 
 @app.route('/authority_dashboard')
 @login_required
@@ -505,16 +540,114 @@ def authority_dashboard():
                                trend_labels=[],
                                trend_data={'Fire': [], 'Flood': [], 'Earthquake': [], 'Unknown': []})
 
-@app.route('/gdacs_events')
-def gdacs_events():
-    """
-    Expose GDACS events as JSON.
-    """
-    events = fetch_gdacs_events()
-    return jsonify(events)
+
 @app.route('/user_guide')
 def user_guide():
     return render_template('user_guide.html')
+
+@app.route('/debug/reports')
+def debug_reports():
+    """Debug route to see what reports are in the database"""
+    reports = Report.query.all()
+    debug_data = []
+    for report in reports:
+        debug_data.append({
+            'id': report.id,
+            'description': report.description[:100] + '...' if len(report.description) > 100 else report.description,
+            'location': report.location,
+            'extracted_locations': report.extracted_locations,
+            'disaster_type': report.disaster_type,
+            'has_image': report.image is not None,
+            'image_size': len(report.image) if report.image else 0,
+            'created_at': report.created_at.isoformat() if report.created_at else None
+        })
+    return jsonify(debug_data)
+
+@app.route('/debug/danger_zones')
+def debug_danger_zones():
+    """Debug route to see what danger zones are in the database"""
+    zones = DangerZone.query.all()
+    debug_data = []
+    for zone in zones:
+        debug_data.append({
+            'id': zone.id,
+            'location': zone.location,
+            'latitude': zone.latitude,
+            'longitude': zone.longitude,
+            'report_count': zone.report_count
+        })
+    return jsonify(debug_data)
+@app.route('/resource_map')
+def resource_map():
+    """Page for users to view the resource map"""
+    return render_template('resource_map.html')
+
+@app.route('/manage_resource_camps')
+@login_required
+@require_authority
+def manage_resource_camps():
+    """Authority page to manage resource camps"""
+    return render_template('manage_resource_camps.html')
+
+@app.route('/api/resource_camps')
+def get_resource_camps():
+    """API to fetch all camps for the Google Map"""
+    camps = ResourceCamp.query.all()
+    return jsonify([camp.to_dict() for camp in camps])
+
+@app.route('/add_resource_camp', methods=['POST'])
+@login_required
+@require_authority
+def add_resource_camp():
+    """Authority route to add a new camp"""
+    name = request.form.get('name')
+    camp_type = request.form.get('camp_type')
+    location = request.form.get('location')
+    contact = request.form.get('contact')
+
+    # Geocode the address
+    lat, lng = get_coordinates(location)
+
+    if lat and lng:
+        new_camp = ResourceCamp(
+            name=name,
+            camp_type=camp_type,
+            location=location,
+            latitude=lat,
+            longitude=lng,
+            contact_info=contact
+        )
+        db.session.add(new_camp)
+        db.session.commit()
+        
+        # Return JSON for AJAX requests, or redirect for form submissions
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.accept_mimetypes.accept_json:
+            return jsonify({'success': True, 'message': f'{camp_type} Camp added successfully!'})
+        
+        flash(f'{camp_type} Camp added successfully!', 'success')
+        return redirect(url_for('authority_dashboard'))
+    else:
+        # Return JSON error for AJAX requests
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.accept_mimetypes.accept_json:
+            return jsonify({'success': False, 'message': 'Could not find location coordinates. Please be more specific.'}), 400
+        
+        flash('Could not find location coordinates. Please be more specific.', 'danger')
+        return redirect(url_for('authority_dashboard'))
+
+@app.route('/delete_resource_camp/<int:camp_id>', methods=['DELETE'])
+@login_required
+@require_authority
+def delete_resource_camp(camp_id):
+    """Authority route to delete a resource camp"""
+    camp = ResourceCamp.query.get_or_404(camp_id)
+    try:
+        db.session.delete(camp)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Camp deleted successfully!'})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting camp: {str(e)}")
+        return jsonify({'success': False, 'message': 'Error deleting camp.'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

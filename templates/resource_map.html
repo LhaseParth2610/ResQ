@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResQ - Resource Map</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+            border-radius: 0.5rem;
+        }
+
+        .camp-list::-webkit-scrollbar { width: 6px; }
+        .camp-list::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+        #loading { display: none; }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            body { padding-bottom: 80px; }
+            .camp-list { max-height: 250px; }
+            #map { min-height: 600px !important; }
+            .w-full.md\:w-96 { max-height: 450px; }
+        }
+
+        .mobile-bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000; padding: 8px 0;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+        }
+        .mobile-bottom-nav .nav-items { display: flex; justify-content: space-around; }
+        .mobile-bottom-nav .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 8px 12px; color: #64748b; text-decoration: none;
+            font-size: 11px; font-weight: 500; border-radius: 8px;
+        }
+        .mobile-bottom-nav .nav-item.active { color: #2563eb; background: #eff6ff; }
+    </style>
+</head>
+
+<body class="bg-gray-50 h-screen flex flex-col">
+
+    <div class="bg-white border-b border-gray-200 px-4 py-3">
+        <a href="{{ url_for('index') }}" class="inline-flex items-center text-gray-600 hover:text-blue-600 transition">
+            <i class="fas fa-arrow-left mr-2"></i>
+            <span class="font-medium">Back to Home</span>
+        </a>
+    </div>
+
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+
+        <div class="w-full md:w-96 bg-white shadow-xl z-10 flex flex-col border-r border-gray-200">
+            <div class="p-6 border-b border-gray-100 bg-gray-50">
+                <h2 class="text-xl font-bold text-gray-800 mb-2">Find Help Nearby</h2>
+                <p class="text-sm text-gray-500 mb-4">Locate safe shelters and supplies away from danger zones.</p>
+
+                <button onclick="findNearestCamp()"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition transform active:scale-95 flex items-center justify-center space-x-2">
+                    <i class="fas fa-location-arrow"></i>
+                    <span>Navigate to Nearest Camp</span>
+                </button>
+                <p id="status-msg" class="text-xs text-center text-gray-500 mt-2 min-h-[1.5rem]"></p>
+            </div>
+
+            <div class="py-2 px-3 bg-white border-b grid grid-cols-2 gap-2 text-sm">
+                <div class="flex items-center"><i class="fas fa-briefcase-medical text-red-500 w-6 mr-1"></i> <span>Medical</span></div>
+                <div class="flex items-center"><i class="fas fa-home text-blue-500 w-6 mr-1"></i> <span>Shelter</span></div>
+                <div class="flex items-center"><i class="fas fa-utensils text-orange-500 w-6 mr-1"></i> <span>Food</span></div>
+                <div class="flex items-center"><div style="width:12px; height:12px; background:red; border-radius:50%; margin-right:8px; opacity:0.6;"></div> <span>Danger Zone</span></div>
+            </div>
+
+            <div id="camp-list-container" class="camp-list flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                <p class="text-center text-gray-400 mt-10">Loading resources...</p>
+            </div>
+        </div>
+
+        <div class="flex-1 relative">
+            <div id="map"></div>
+            <div id="loading" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 text-white">
+                <div class="text-center">
+                    <i class="fas fa-spinner fa-spin text-4xl mb-2"></i>
+                    <p>Calculating route...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="mobile-bottom-nav">
+        <div class="nav-items">
+            <a href="{{ url_for('index') }}" class="nav-item">
+                <i class="fas fa-home"></i> <span>Home</span>
+            </a>
+            <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')" class="nav-item">
+                <i class="fas fa-edit"></i> <span>Report</span>
+            </a>
+            <a href="{{ url_for('alerts') }}" class="nav-item">
+                <i class="fas fa-bell"></i> <span>Alerts</span>
+            </a>
+            <a href="{{ url_for('resource_map') }}" class="nav-item active">
+                <i class="fas fa-campground"></i> <span>Camps</span>
+            </a>
+            <a href="#" onclick="checkAuth(event, '{{ url_for('safe_route') }}')" class="nav-item">
+                <i class="fas fa-route"></i> <span>Safe Route</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        let map;
+        let userMarker;
+        let directionsService;
+        let directionsRenderer;
+        let allCamps = [];
+        let userLocation = null;
+        let heatmap; // Variable for the heatmap layer
+
+        // Icons configuration (Using FontAwesome colors logic mostly, but specific markers here)
+        const icons = {
+            'Medical': 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+            'Shelter': 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+            'Food': 'http://maps.google.com/mapfiles/ms/icons/orange-dot.png',
+            'User': 'http://maps.google.com/mapfiles/kml/shapes/man.png'
+        };
+
+        function initMap() {
+            const defaultLoc = { lat: 20.5937, lng: 78.9629 };
+
+            // 1. Initialize Map with Clean Styles (Same as Index)
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 5,
+                center: defaultLoc,
+                mapTypeControl: false,
+                fullscreenControl: false,
+                streetViewControl: false,
+                styles: [
+                    { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }
+                ]
+            });
+
+            // 2. Initialize Directions
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer({
+                map: map,
+                suppressMarkers: true,
+                polylineOptions: { strokeColor: "#2563EB", strokeWeight: 5, strokeOpacity: 0.7 }
+            });
+
+            // 3. FETCH & RENDER HEATMAP (The Index.html Feature)
+            fetch("/danger_zones")
+                .then(response => response.json())
+                .then(data => {
+                    const heatmapData = data.map(zone => ({
+                        location: new google.maps.LatLng(zone.latitude, zone.longitude),
+                        weight: zone.report_count
+                    }));
+
+                    heatmap = new google.maps.visualization.HeatmapLayer({
+                        data: heatmapData,
+                        map: map,
+                        radius: 35,
+                        opacity: 0.6, // Slightly transparent so we can see camp markers
+                        gradient: [
+                            'rgba(0, 255, 0, 0)',
+                            'rgba(255, 255, 0, 0.7)',
+                            'rgba(255, 165, 0, 0.8)',
+                            'rgba(255, 0, 0, 1)'
+                        ]
+                    });
+                })
+                .catch(err => console.error("Error loading danger zones for heatmap:", err));
+
+            // 4. Fetch Camps Markers
+            fetchCamps();
+        }
+
+        async function fetchCamps() {
+            try {
+                const response = await fetch('/api/resource_camps');
+                allCamps = await response.json();
+                renderCampList(allCamps);
+
+                const bounds = new google.maps.LatLngBounds();
+
+                allCamps.forEach(camp => {
+                    addMarker(camp);
+                    bounds.extend({ lat: camp.latitude, lng: camp.longitude });
+                });
+
+                if (allCamps.length > 0) {
+                    map.fitBounds(bounds);
+                }
+            } catch (error) {
+                console.error('Error fetching camps:', error);
+            }
+        }
+
+        function addMarker(camp) {
+            let iconUrl = icons[camp.camp_type] || icons['Food'];
+            
+            const marker = new google.maps.Marker({
+                position: { lat: camp.latitude, lng: camp.longitude },
+                map: map,
+                title: camp.name,
+                icon: { url: iconUrl } // Standard Google Markers
+            });
+
+            const infoContent = `
+                <div class="p-2 min-w-[200px]">
+                    <h3 class="font-bold text-gray-800 text-lg">${camp.name}</h3>
+                    <div class="flex items-center mt-1 mb-2">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded">${camp.camp_type}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-1"><i class="fas fa-map-marker-alt text-red-400 mr-1"></i> ${camp.location}</p>
+                    <button onclick="routeTo(${camp.latitude}, ${camp.longitude})" class="mt-3 w-full bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded hover:bg-blue-700">
+                        Get Directions
+                    </button>
+                </div>
+            `;
+
+            const infoWindow = new google.maps.InfoWindow({ content: infoContent });
+            marker.addListener("click", () => infoWindow.open(map, marker));
+        }
+
+        function renderCampList(camps) {
+            const container = document.getElementById('camp-list-container');
+            container.innerHTML = '';
+            camps.forEach(camp => {
+                const item = document.createElement('div');
+                item.className = 'bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer';
+                item.onclick = () => {
+                    map.setZoom(15);
+                    map.panTo({ lat: camp.latitude, lng: camp.longitude });
+                };
+
+                let iconClass = "fa-utensils text-orange-500";
+                if (camp.camp_type === 'Medical') iconClass = "fa-briefcase-medical text-red-500";
+                if (camp.camp_type === 'Shelter') iconClass = "fa-home text-blue-500";
+
+                item.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 mt-1"><i class="fas ${iconClass} text-lg"></i></div>
+                        <div class="ml-3">
+                            <h4 class="font-bold text-gray-800">${camp.name}</h4>
+                            <p class="text-xs text-gray-500">${camp.location}</p>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function findNearestCamp() {
+            const statusMsg = document.getElementById('status-msg');
+            const loading = document.getElementById('loading');
+            statusMsg.textContent = "Locating you...";
+            statusMsg.className = "text-xs text-center text-blue-600 mt-2 font-semibold";
+
+            if (navigator.geolocation) {
+                loading.style.display = 'flex';
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+
+                        if (userMarker) userMarker.setMap(null);
+                        userMarker = new google.maps.Marker({
+                            position: userLocation,
+                            map: map,
+                            title: "You",
+                            animation: google.maps.Animation.DROP
+                        });
+
+                        // Simple distance check
+                        let closestCamp = null;
+                        let minDist = Infinity;
+                        
+                        // Use Geometry library or simple math
+                        allCamps.forEach(camp => {
+                             // Simple Euclidean approximation for speed demo (Use Haversine in production)
+                             const d = Math.sqrt(Math.pow(camp.latitude - userLocation.lat, 2) + Math.pow(camp.longitude - userLocation.lng, 2));
+                             if(d < minDist) { minDist = d; closestCamp = camp; }
+                        });
+
+                        loading.style.display = 'none';
+                        if (closestCamp) {
+                            statusMsg.textContent = `Navigating to: ${closestCamp.name}`;
+                            statusMsg.className = "text-xs text-center text-green-600 mt-2 font-bold";
+                            routeTo(closestCamp.latitude, closestCamp.longitude);
+                        }
+                    },
+                    () => { loading.style.display = 'none'; statusMsg.textContent = "Location denied."; }
+                );
+            }
+        }
+
+        function routeTo(destLat, destLng) {
+            if (!userLocation) { findNearestCamp(); return; }
+            const request = {
+                origin: userLocation,
+                destination: { lat: destLat, lng: destLng },
+                travelMode: google.maps.TravelMode.DRIVING
+            };
+            directionsService.route(request, function (result, status) {
+                if (status == 'OK') directionsRenderer.setDirections(result);
+            });
+        }
+
+        function checkAuth(e, url) { e.preventDefault(); window.location.href = url; }
+    </script>
+
+    <script>
+        fetch('/api/maps/key')
+            .then(response => response.json())
+            .then(data => {
+                const script = document.createElement('script');
+                // NOTE: Added &libraries=visualization here!
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${data.api_key}&libraries=visualization&callback=initMap`;
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+            })
+            .catch(err => console.error("Failed to load Maps API Key", err));
+    </script>
+
+</body>
+</html>

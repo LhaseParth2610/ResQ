@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Alerts - ResQ</title>
+
+    <!-- Fonts & Tailwind -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" />
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
+
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #f1f5f9;
+            padding-bottom: 80px;
+        }
+
+        .alert-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border-left: 4px solid #f59e0b;
+        }
+
+        .alert-card.high {
+            border-left-color: #dc2626;
+            background: linear-gradient(135deg, #fee2e2 0%, white 100%);
+        }
+
+        .alert-card.medium {
+            border-left-color: #ea580c;
+            background: linear-gradient(135deg, #ffedd5 0%, white 100%);
+        }
+
+        .alert-card.low {
+            border-left-color: #22c55e;
+            background: linear-gradient(135deg, #dcfce7 0%, white 100%);
+        }
+
+        .category-tab {
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .category-tab.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        .category-tab:not(.active) {
+            background: white;
+            color: #64748b;
+        }
+
+        /* Mobile Bottom Navigation */
+        .mobile-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 8px 0;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+        }
+
+        .mobile-bottom-nav .nav-items {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .mobile-bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-radius: 8px;
+        }
+
+        .mobile-bottom-nav .nav-item:hover,
+        .mobile-bottom-nav .nav-item.active {
+            color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .mobile-bottom-nav .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-lg mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <a href="{{ url_for('index') }}" class="text-gray-600">
+                    <i class="fas fa-arrow-left text-xl"></i>
+                </a>
+                <h1 class="text-xl font-bold text-gray-800">Live Alerts</h1>
+                <button onclick="loadAlerts()" class="text-blue-600">
+                    <i class="fas fa-sync-alt text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Tabs -->
+    <div class="max-w-lg mx-auto px-4 py-3">
+        <div class="flex gap-2 overflow-x-auto pb-2" id="category-tabs">
+            <div class="category-tab active" data-category="all" onclick="filterAlerts('all')">
+                <i class="fas fa-list mr-1"></i> All
+            </div>
+            <div class="category-tab" data-category="earthquake" onclick="filterAlerts('earthquake')">
+                <i class="fas fa-globe-americas mr-1"></i> Earthquakes
+            </div>
+            <div class="category-tab" data-category="flood" onclick="filterAlerts('flood')">
+                <i class="fas fa-water mr-1"></i> Floods
+            </div>
+            <div class="category-tab" data-category="severe_storm" onclick="filterAlerts('severe_storm')">
+                <i class="fas fa-bolt mr-1"></i> Storms
+            </div>
+            <div class="category-tab" data-category="tornado" onclick="filterAlerts('tornado')">
+                <i class="fas fa-wind mr-1"></i> Tornadoes
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts List -->
+    <div class="max-w-lg mx-auto px-4" id="alerts-container">
+        <div class="text-center py-8 text-gray-500">
+            <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+            <p>Loading alerts...</p>
+        </div>
+    </div>
+
+    <script>
+        let allAlerts = [];
+        let currentFilter = 'all';
+
+        async function loadAlerts() {
+            try {
+                const res = await fetch('/api/live_updates');
+                const data = await res.json();
+                allAlerts = data.events || [];
+                renderAlerts();
+            } catch (err) {
+                document.getElementById('alerts-container').innerHTML = `
+                    <div class="text-center py-8 text-red-500">
+                        <i class="fas fa-exclamation-circle text-3xl mb-3"></i>
+                        <p>Failed to load alerts</p>
+                    </div>
+                `;
+            }
+        }
+
+        function filterAlerts(category) {
+            currentFilter = category;
+
+            // Update tab styles
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                if (tab.dataset.category === category) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+
+            renderAlerts();
+        }
+
+        function renderAlerts() {
+            const container = document.getElementById('alerts-container');
+
+            let filtered = allAlerts;
+            if (currentFilter !== 'all') {
+                filtered = allAlerts.filter(a => a.category === currentFilter);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-check-circle text-3xl mb-3 text-green-500"></i>
+                        <p>No alerts in this category</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(alert => {
+                const severityClass = alert.severity >= 5 ? 'high' : alert.severity >= 4 ? 'medium' : 'low';
+                const severityText = alert.severity >= 5 ? 'High' : alert.severity >= 4 ? 'Severe' : 'Low';
+                const time = alert.time ? new Date(alert.time).toLocaleString() : '--';
+
+                return `
+                    <div class="alert-card ${severityClass}">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-gray-800 flex-1 pr-2">${alert.title}</h3>
+                            <span class="text-xs px-2 py-1 rounded-full font-medium ${severityClass === 'high' ? 'bg-red-100 text-red-700' :
+                        severityClass === 'medium' ? 'bg-orange-100 text-orange-700' :
+                            'bg-green-100 text-green-700'
+                    }">${severityText}</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-2">
+                            <i class="fas fa-satellite-dish mr-1"></i> ${alert.source || 'USGS/NOAA'}
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-clock mr-1"></i> ${time}
+                        </p>
+                        ${alert.location ? `<p class="text-xs text-gray-500 mt-1"><i class="fas fa-map-marker-alt mr-1"></i> ${alert.location}</p>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Load alerts on page load
+        loadAlerts();
+
+        // Auto-refresh every 5 minutes
+        setInterval(loadAlerts, 5 * 60 * 1000);
+    </script>
+    <nav class="mobile-bottom-nav">
+        <div class="nav-items">
+            <a href="{{ url_for('index') }}" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+
+            <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')" class="nav-item">
+                <i class="fas fa-edit"></i>
+                <span>Report</span>
+            </a>
+
+            <a href="{{ url_for('alerts') }}" class="nav-item">
+                <i class="fas fa-bell"></i>
+                <span>Alerts</span>
+            </a>
+
+            <a href="{{ url_for('resource_map') }}" class="nav-item">
+                <i class="fas fa-campground"></i>
+                <span>Camps</span>
+            </a>
+
+            <a href="#" onclick="checkAuth(event, '{{ url_for('safe_route') }}')" class="nav-item">
+                <i class="fas fa-route"></i>
+                <span>Safe Route</span>
+            </a>
+        </div>
+    </nav>
+</body>
+
+</html>

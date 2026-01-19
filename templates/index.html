@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,162 +13,912 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" />
     <!-- AOS Animation Library -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Favicon -->
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
-    <style>
-        /* Custom styles that extend Tailwind */
+   <style>
+    /* =========================================
+       GLOBAL RESETS & CORE STYLES
+       ========================================= */
+    html,
+    body {
+        overflow-x: hidden;
+        width: 100%;
+        max-width: 100vw;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    /* Custom styles that extend Tailwind */
         body {
-            font-family: 'Bodoni Moda', serif;
+            /* NEW: Tactical Dashboard Background (Light Slate Gray) */
+            background-color: #f1f5f9; 
+            
+            /* CHANGED: Modern Sans-Serif font for better readability on maps/dashboards */
+            font-family: 'Plus Jakarta Sans', 'Roboto', sans-serif; 
+            
             scroll-behavior: smooth;
-        }
-        
-        .hero-bg {
-            height: 100vh;
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
-        
-        .service-card {
-            transition: all 0.3s ease;
-        }
-        
-        .service-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-        
-        .notice-pin {
-            transform: rotate(10deg);
-            transition: transform 0.3s ease;
-        }
-        
-        .notice-item:hover .notice-pin {
-            transform: rotate(0deg);
-        }
-        
-        .announcement-ticker {
-            animation: ticker 20s linear infinite;
-        }
-        
-        @keyframes ticker {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
-        }
-        
-        .navbar-link {
             position: relative;
         }
-        
-        .navbar-link::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 50%;
-            width: 0;
-            height: 2px;
-            background-color: #1976d2;
-            transition: all 0.3s ease;
-            transform: translateX(-50%);
+
+    /* =========================================
+       MOBILE RESPONSIVE LOGIC
+       ========================================= */
+    @media (max-width: 768px) {
+
+        /* Hide Desktop Elements */
+        nav.desktop-nav,
+        #mobile-menu,
+        .md\:hidden,
+        .slideshow,
+        .announcement-ticker,
+        .bg-blue-600,
+        #about,
+        #notices,
+        #services,
+        #live-updates-details,
+        .mobile-ticker,
+        .desktop-content {
+            display: none !important;
         }
-        
-        .navbar-link:hover::after {
-            width: 100%;
+
+        /* Layout Adjustments */
+        body {
+            padding-bottom: 140px;
+            padding-top: 0;
         }
-        
-        .shadow-hover:hover {
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-        
-        .notice-board {
-            background-image: url('https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=800&q=80');
-            background-size: cover;
-            background-position: center;
-        }
-/* Slideshow Styles */
-.slideshow {
-    position: relative;
-    width: 100%;
-    height: 100vh; /* Full viewport height, adjust as needed */
-}
 
-.slide {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    opacity: 0;
-    transition: opacity 1s ease-in-out; /* Smooth fade-in effect */
-    z-index: 1; /* Ensure slides are below the overlay but can show text */
-}
-
-.slide .container {
-    position: relative;
-    z-index: 2; /* Ensure text and buttons are above the background and overlay */
-}
-
-.active {
-    opacity: 1;
-}
-
-.absolute {
-    position: absolute;
-}
-
-.bg-black.opacity-40 {
-    background-color: black;
-    opacity: 0.4;
-    z-index: 1; /* Below the text but above the background image */
-}
-
-/* SVG wave at the bottom (optional, keep below text) */
-.slideshow > .absolute.bottom-0 {
-    z-index: 1; /* Wave below slides, overlay, and text */
-}
-
-        /* FAQ Styles */
+        /* Show Mobile Elements */
+        #guidelines,
+        .mobile-notice-board,
         .faq-section {
-            background-color: #f9fafb;
-            padding: 4rem 2rem;
+            background-color: #ffffff; /* Pure white */
+            margin: 16px; /* Add margin so they float */
+            border-radius: 20px; /* Rounded corners */
+            padding: 24px 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02); /* Subtle shadow */
         }
-        .faq-item {
-            background-color: white;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        footer,
+        .mobile-header,
+        .mobile-alert-banner,
+        .mobile-feature-cards,
+        .mobile-alert-indicators,
+        .mobile-map-preview,
+        .mobile-sos-bar,
+        .mobile-bottom-nav {
+            display: block !important;
         }
-        .faq-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+
+        .mobile-header {
+            display: flex !important;
         }
-        .faq-question {
-            padding: 1rem 1.5rem;
-            cursor: pointer;
-            background-color: #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+    }
+
+    /* Hide Mobile Elements on Desktop */
+    @media (min-width: 769px) {
+
+        .mobile-header,
+        .mobile-bottom-nav,
+        .mobile-sos-bar,
+        .mobile-alert-banner,
+        .mobile-feature-cards,
+        .mobile-map-preview {
+            display: none !important;
         }
-        .faq-answer {
-            padding: 1rem 1.5rem;
-            display: none;
-            background-color: #f3f4f6;
+    }
+
+    /* =========================================
+       COMPONENT: MOBILE HEADER
+       ========================================= */
+    .mobile-header {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        z-index: 100;
+        padding: 12px 16px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .mobile-header .location-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .mobile-header .location-info i {
+        color: #dc2626;
+        font-size: 16px;
+    }
+
+    .mobile-header .location-info .location-text {
+        font-size: 14px;
+        color: #1e293b;
+        font-weight: 600;
+    }
+
+    .mobile-header .location-info .location-subtext {
+        font-size: 11px;
+        color: #64748b;
+    }
+
+    .mobile-header .header-icons {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .mobile-header .header-icons .icon-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #475569;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .mobile-header .header-icons .profile-btn {
+        background: #2563eb;
+        color: white;
+    }
+
+    /* =========================================
+       COMPONENT: ALERT BANNER (TIGHTER SPACING)
+       ========================================= */
+    .mobile-alert-banner {
+        display: none; /* JS toggles this */
+        
+        /* UPDATED MARGINS: 
+           Top: 75px (keeps it under header)
+           Right/Left: 24px (keeps width)
+           Bottom: 6px (WAS 16px - pulls buttons closer) */
+        margin: 75px 24px 6px 24px; 
+        
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    /* Dynamic Border Colors */
+    .mobile-alert-banner.alert-high { border-left: 6px solid #dc2626; }
+    .mobile-alert-banner.alert-medium { border-left: 6px solid #f59e0b; }
+    .mobile-alert-banner { border-left: 6px solid #22c55e; }
+
+    /* COMPACT PADDING (Kept same as before) */
+    .card-content {
+        padding: 14px;
+    }
+
+    .banner-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px; 
+    }
+
+    .severity-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #ecfdf5;
+        color: #059669;
+        padding: 4px 10px;
+        border-radius: 30px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .mobile-alert-banner.alert-high .severity-badge { background: #fef2f2; color: #dc2626; }
+    .mobile-alert-banner.alert-medium .severity-badge { background: #fffbeb; color: #d97706; }
+
+    .time-badge {
+        font-size: 11px;
+        color: #94a3b8;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .banner-body {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px; 
+        gap: 12px;
+    }
+
+    .info-left {
+        flex: 1;
+    }
+
+    .event-title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0 0 4px 0;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .event-location {
+        font-size: 12px;
+        color: #64748b;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .event-location i { color: #ef4444; }
+
+    .source-info {
+        font-size: 10px;
+        color: #94a3b8;
+        background: #f8fafc;
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 6px;
+    }
+
+    .magnitude-circle {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 20px -5px rgba(37, 99, 235, 0.4);
+        flex-shrink: 0;
+    }
+
+    .mobile-alert-banner.alert-high .magnitude-circle { 
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+        box-shadow: 0 8px 20px -5px rgba(220, 38, 38, 0.4); 
+    }
+    .mobile-alert-banner.alert-medium .magnitude-circle { 
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
+        box-shadow: 0 8px 20px -5px rgba(217, 119, 6, 0.4); 
+    }
+
+    .magnitude-circle .mag-num {
+        color: white;
+        font-size: 16px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .magnitude-circle .mag-unit {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 7px;
+        font-weight: 700;
+        margin-top: 2px;
+    }
+
+    .banner-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 10px; 
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .nav-controls {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #f8fafc;
+        padding: 3px;
+        border-radius: 30px;
+    }
+
+    .nav-arrow {
+        width: 24px;
+        height: 24px;
+        border: none;
+        background: white;
+        border-radius: 50%;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s;
+    }
+
+    .nav-arrow:active { transform: scale(0.95); }
+
+    .nav-counter {
+        font-size: 10px;
+        color: #64748b;
+        font-weight: 600;
+        min-width: 25px;
+        text-align: center;
+    }
+
+    .view-all-btn {
+        background: #1e293b;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(30, 41, 59, 0.2);
+    }
+
+    .view-all-btn:hover {
+        background: #334155;
+        transform: translateY(-1px);
+    }
+
+    /* =========================================
+       COMPONENT: ACTION CARDS (Guide & Report)
+       ========================================= */
+    .mobile-feature-cards {
+        display: none; /* JS toggles this */
+        padding: 0 24px;
+        margin-bottom: 24px;
+    }
+
+    .cards-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 50% split */
+        gap: 16px; /* Perfect gap */
+    }
+
+    .feature-card {
+        background: #ffffff;
+        border-radius: 24px; /* Super rounded corners */
+        padding: 20px 12px;
+        text-align: center;
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08); /* Soft floaty shadow */
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(0,0,0,0.04);
+        min-height: 130px; /* Ensures consistent height */
+        position: relative;
+        overflow: hidden;
+    }
+
+    .feature-card:active {
+        transform: scale(0.96);
+    }
+
+    /* Decorative Background Blur (Optional visual flair) */
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(59,130,246,0.05) 0%, rgba(255,255,255,0) 70%);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .feature-card:hover::before { opacity: 1; }
+
+    /* Styled Icon Bubbles */
+    .card-icon-bubble {
+        width: 50px;
+        height: 50px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+        font-size: 22px;
+        transition: transform 0.2s;
+    }
+
+    /* Specific Colors for Identity */
+    .feature-card.guide .card-icon-bubble {
+        background: #eff6ff;
+        color: #2563eb; /* Blue */
+    }
+
+    .feature-card.report .card-icon-bubble {
+        background: #fef2f2;
+        color: #dc2626; /* Red */
+    }
+
+    .feature-card .card-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.3;
+        letter-spacing: -0.3px;
+    }
+
+    .feature-card .card-subtitle {
+        font-size: 10px;
+        color: #94a3b8;
+        font-weight: 500;
+        margin-top: 4px;
+    }
+
+    /* =========================================
+       COMPONENT: STATS ROW (Indicators)
+       ========================================= */
+    .mobile-alert-indicators {
+        display: none;
+        padding: 0 24px;
+        margin-bottom: 24px;
+    }
+
+    .indicators-row {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto; /* Horizontal scroll if screen is very narrow */
+        padding-bottom: 8px; /* Space for scrollbar hide */
+        scrollbar-width: none; /* Hide scrollbar Firefox */
+    }
+    .indicators-row::-webkit-scrollbar { display: none; } /* Hide scrollbar Chrome */
+
+    .indicator {
+        flex: 1; /* Distribute space evenly */
+        background: white;
+        border-radius: 18px;
+        padding: 16px 10px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0,0,0,0.03);
+        min-width: 75px; /* Minimum width to prevent squashing */
+        transition: transform 0.2s;
+    }
+
+    .indicator:active { transform: scale(0.95); }
+
+    .indicator i {
+        font-size: 20px;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .indicator .count {
+        font-size: 20px;
+        font-weight: 800;
+        color: #1e293b;
+        line-height: 1;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .indicator .label {
+        font-size: 10px;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Indicator specific colors */
+    .indicator.earthquake i { color: #f59e0b; filter: drop-shadow(0 4px 6px rgba(245, 158, 11, 0.2)); }
+    .indicator.flood i { color: #3b82f6; filter: drop-shadow(0 4px 6px rgba(59, 130, 246, 0.2)); }
+    .indicator.storm i { color: #8b5cf6; filter: drop-shadow(0 4px 6px rgba(139, 92, 246, 0.2)); }
+    .indicator.tornado i { color: #64748b; filter: drop-shadow(0 4px 6px rgba(100, 116, 139, 0.2)); }
+
+    /* =========================================
+       COMPONENT: LIVE MAP CARD (FIXED)
+       ========================================= */
+    .mobile-map-preview {
+        display: none; /* JS toggles this */
+        padding: 0 24px;
+        margin-bottom: 8px;
+    }
+    /* Hides Google Maps bottom links/terms */
+    .gmnoprint a, .gmnoprint span, .gm-style-cc {
+        display: none;
+    }
+    
+    /* Hides the Google Logo (Use caution/at own risk regarding ToS) */
+    .gmnoprint {
+        display: none;
+    }
+
+    .map-card {
+        position: relative;
+        height: 250px; /* Fixed height is REQUIRED for maps */
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15);
+        background: #e2e8f0; /* Fallback gray */
+        cursor: pointer;
+        z-index: 1;
+    }
+
+    /* Map Background - Forced to fill space */
+    .live-map-bg {
+        position: absolute !important;
+        top: 0;
+        left: 0;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 0; /* Behind everything */
+        background: transparent;
+    }
+
+    /* Gradient Overlay */
+    .map-overlay-gradient {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.8) 100%);
+        z-index: 1; /* Above map */
+        pointer-events: none;
+    }
+
+    /* Text Content */
+    .map-card-content {
+        position: absolute;
+        inset: 0;
+        z-index: 2; /* Above gradient */
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        pointer-events: none;
+    }
+
+    /* Live Badge Styling */
+    .live-badge {
+        background: rgba(239, 68, 68, 0.9);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+    }
+
+    .pulse-dot {
+        width: 6px;
+        height: 6px;
+        background: white;
+        border-radius: 50%;
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; transform: scale(1); }
+        100% { opacity: 0; transform: scale(2); }
+    }
+
+    .map-title {
+        color: white;
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .map-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 12px;
+    }
+
+    /* =========================================
+       COMPONENT: BOTTOM NAV & SOS
+       ========================================= */
+    .mobile-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        padding: 8px 0;
+        padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+
+    .mobile-bottom-nav .nav-items {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+    }
+
+    .mobile-bottom-nav .nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 8px 12px;
+        color: #64748b;
+        text-decoration: none;
+        font-size: 11px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border-radius: 8px;
+    }
+
+    .mobile-bottom-nav .nav-item:hover,
+    .mobile-bottom-nav .nav-item.active {
+        color: #2563eb;
+        background: #eff6ff;
+    }
+
+    .mobile-bottom-nav .nav-item i {
+        font-size: 20px;
+        margin-bottom: 4px;
+    }
+
+    .mobile-sos-bar {
+        position: fixed;
+        bottom: 70px;
+        left: 16px;
+        right: 16px;
+        z-index: 999;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .mobile-sos-bar button {
+        width: 100%;
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 16px;
+        font-size: 18px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: none;
+        box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .mobile-sos-bar button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(220, 38, 38, 0.5);
+    }
+
+    .mobile-sos-bar button:active {
+        transform: translateY(0);
+    }
+
+    /* =========================================
+       COMPONENT: PROFILE DROPDOWN
+       ========================================= */
+    .profile-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        min-width: 180px;
+        display: none;
+        z-index: 1001;
+        overflow: hidden;
+    }
+
+    .profile-dropdown.show {
+        display: block;
+    }
+
+    .profile-dropdown a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        color: #1e293b;
+        text-decoration: none;
+        font-size: 14px;
+        transition: background 0.2s;
+    }
+
+    .profile-dropdown a:hover {
+        background: #f1f5f9;
+    }
+
+    .profile-dropdown a i {
+        width: 20px;
+        text-align: center;
+        color: #64748b;
+    }
+
+    /* =========================================
+       UTILITY & OTHER SECTIONS
+       ========================================= */
+    .hero-bg {
+        height: 100vh;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+
+    .service-card {
+        transition: all 0.3s ease;
+    }
+
+    .service-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .notice-pin {
+        transform: rotate(10deg);
+        transition: transform 0.3s ease;
+    }
+
+    .notice-item:hover .notice-pin {
+        transform: rotate(0deg);
+    }
+
+    .announcement-ticker {
+        animation: ticker 20s linear infinite;
+    }
+
+    @keyframes ticker {
+        0% {
+            transform: translateX(100%);
         }
-        .faq-answer.active {
-            display: block;
+
+        100% {
+            transform: translateX(-100%);
         }
-        .faq-toggle {
-            transition: transform 0.3s ease;
-        }
-        .faq-toggle.rotate {
-            transform: rotate(180deg);
-        }
-    </style>
+    }
+
+    .navbar-link {
+        position: relative;
+    }
+
+    .navbar-link::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 50%;
+        width: 0;
+        height: 2px;
+        background-color: #1976d2;
+        transition: all 0.3s ease;
+        transform: translateX(-50%);
+    }
+
+    .navbar-link:hover::after {
+        width: 100%;
+    }
+
+    .shadow-hover:hover {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .notice-board {
+        background-image: url('https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=800&q=80');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .slideshow {
+        position: relative;
+        width: 100%;
+        height: 100vh;
+    }
+
+    .slide {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        opacity: 0;
+        transition: opacity 1s ease-in-out;
+        z-index: 1;
+    }
+
+    .slide .container {
+        position: relative;
+        z-index: 2;
+    }
+
+    .active {
+        opacity: 1;
+    }
+
+    .absolute {
+        position: absolute;
+    }
+
+    .bg-black.opacity-40 {
+        background-color: black;
+        opacity: 0.4;
+        z-index: 1;
+    }
+
+    .slideshow>.absolute.bottom-0 {
+        z-index: 1;
+    }
+
+    .faq-section {
+        background-color: #f9fafb;
+        padding: 4rem 2rem;
+    }
+
+    .faq-item {
+        background-color: white;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .faq-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .faq-question {
+        padding: 1rem 1.5rem;
+        cursor: pointer;
+        background-color: #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .faq-answer {
+        padding: 1rem 1.5rem;
+        display: none;
+        background-color: #f3f4f6;
+    }
+
+    .faq-answer.active {
+        display: block;
+    }
+
+    .faq-toggle {
+        transition: transform 0.3s ease;
+    }
+
+    .faq-toggle.rotate {
+        transform: rotate(180deg);
+    }
+</style>
     <script>
         function checkAuth(event, url) {
             event.preventDefault();
@@ -190,44 +941,233 @@
         }
     </script>
 </head>
-<body class="bg-white text-gray-800 overflow-x-hidden">
+
+<body class="text-gray-800 overflow-x-hidden">
+    <!-- MOBILE HEADER -->
+    <div class="mobile-header">
+        <div class="location-info">
+            <i class="fas fa-map-marker-alt"></i>
+            <div>
+                <div class="location-text" id="mobile-location-text">Your Location</div>
+                <div class="location-subtext" id="mobile-location-subtext">Detecting location...</div>
+            </div>
+        </div>
+        <div class="header-icons">
+            <button class="icon-btn" onclick="window.location.href='#live-updates-details'">
+                <i class="fas fa-bell"></i>
+            </button>
+            <div style="position: relative;">
+                <button class="icon-btn profile-btn" onclick="toggleProfileDropdown()">
+                    <i class="fas fa-user"></i>
+                </button>
+                <div class="profile-dropdown" id="profile-dropdown">
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('logout') }}">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('login') }}">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Login
+                    </a>
+                    <a href="{{ url_for('register') }}">
+                        <i class="fas fa-user-plus"></i>
+                        Register
+                    </a>
+                    {% endif %}
+                    <a href="#" onclick="checkAuth(event, '{{ url_for('contact') }}')">
+                        <i class="fas fa-envelope"></i>
+                        Contact
+                    </a>
+                    <a href="#" onclick="checkAuth(event, '{{ url_for('about') }}')">
+                        <i class="fas fa-info-circle"></i>
+                        About
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+<!-- MOBILE ALERT BANNER -->
+    <div class="mobile-alert-banner" id="mobile-alert-banner">
+        <div class="card-content">
+            <div class="banner-header">
+                <div class="severity-badge" id="mobile-alert-badge">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>LOW RISK</span>
+                </div>
+                <div class="time-badge">
+                    <i class="far fa-clock"></i>
+                    <span id="mobile-alert-time">Just now</span>
+                </div>
+            </div>
+
+            <div class="banner-body">
+                <div class="info-left">
+                    <h3 class="event-title" id="mobile-alert-title">Loading Alerts...</h3>
+                    <p class="event-location" id="mobile-alert-location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Detecting location...</span>
+                    </p>
+                    <div class="source-info">
+                        <span>Source: <strong id="mobile-alert-issuer">System</strong></span>
+                    </div>
+                </div>
+                <div class="magnitude-circle" id="mobile-alert-magnitude">
+                    <span class="mag-num">--</span>
+                    <span class="mag-unit">MAG</span>
+                </div>
+            </div>
+
+            <div class="banner-footer">
+                <div class="nav-controls">
+                    <button class="nav-arrow" onclick="prevAlert()"><i class="fas fa-chevron-left"></i></button>
+                    <span class="nav-counter" id="mobile-slide-counter">0/0</span>
+                    <button class="nav-arrow" onclick="nextAlert()"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                
+                <button class="view-all-btn" onclick="window.location.href='{{ url_for('alerts') }}'">
+                    All Alerts <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mobile-feature-cards">
+        <div class="cards-row">
+            <a href="{{ url_for('user_guide') }}" class="feature-card guide">
+                <div class="card-icon-bubble">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <div class="card-title">Disaster Guide</div>
+                <div class="card-subtitle">Safety Protocols</div>
+            </a>
+            
+            <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')" class="feature-card report">
+                <div class="card-icon-bubble">
+                    <i class="fas fa-pen-to-square"></i>
+                </div>
+                <div class="card-title">Submit Report</div>
+                <div class="card-subtitle">Get Help Now</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- MOBILE ALERT TYPE INDICATORS -->
+    <div class="mobile-alert-indicators">
+        <div class="indicators-row">
+            <div class="indicator earthquake" onclick="scrollToAlerts('earthquake')">
+                <i class="fas fa-globe-americas"></i>
+                <div class="count" id="mobile-count-earthquake">0</div>
+                <div class="label">Quakes</div>
+            </div>
+            <div class="indicator flood" onclick="scrollToAlerts('flood')">
+                <i class="fas fa-water"></i>
+                <div class="count" id="mobile-count-flood">0</div>
+                <div class="label">Floods</div>
+            </div>
+            <div class="indicator storm" onclick="scrollToAlerts('severe_storm')">
+                <i class="fas fa-bolt"></i>
+                <div class="count" id="mobile-count-storm">0</div>
+                <div class="label">Storms</div>
+            </div>
+            <div class="indicator tornado" onclick="scrollToAlerts('tornado')">
+                <i class="fas fa-wind"></i>
+                <div class="count" id="mobile-count-tornado">0</div>
+                <div class="label">Tornado</div>
+            </div>
+        </div>
+    </div>
+<!-- mobile map preview -->
+    <div class="mobile-map-preview">
+        <div class="map-card" onclick="checkAuth(event, '{{ url_for('map_view') }}')">
+            <div id="mobile-preview-map" class="live-map-bg"></div>
+        </div>
+    </div>
+
+    <!-- MOBILE ANNOUNCEMENT TICKER -->
+    <div class="mobile-ticker"
+        style="background: #2563eb; padding: 12px 16px; margin: 0 16px 16px 16px; border-radius: 12px; overflow: hidden;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-bullhorn" style="color: white; font-size: 16px;"></i>
+            <div class="ticker-text"
+                style="color: white; font-size: 13px; white-space: nowrap; animation: ticker 15s linear infinite;">
+                ⚠️ Stay alert! Check for updates regularly. Report any disaster immediately. Follow official guidelines.
+                Your safety is our priority!
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes ticker {
+            0% {
+                transform: translateX(100%);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+    </style>
+
+    <!-- MOBILE SOS BAR -->
+    <div class="mobile-sos-bar">
+        <button type="button" onclick="sendSOS()">
+            <span><i class="fas fa-broadcast-tower"></i> SOS Call</span>
+            <i class="fas fa-phone"></i>
+        </button>
+    </div>
+
     <!-- NAVIGATION BAR -->
-    <nav class="fixed top-0 left-0 w-full bg-white shadow-md z-50 transition-all duration-300" id="navbar">
+    <nav class="fixed top-0 left-0 w-full bg-white shadow-md z-50 transition-all duration-300 desktop-nav" id="navbar">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
                 <a href="{{ url_for('index') }}" class="text-3xl font-bold text-gray-800 flex items-center">
                     <i class="fas fa-shield-alt text-blue-600 mr-2"></i>ResQ
                 </a>
                 <div class="hidden md:flex space-x-4 items-center">
-                    <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')" class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')"
+                        class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                         <i class="fas fa-exclamation-triangle mr-1"></i> Submit Report
                     </a>
-                    <a href="#" onclick="checkAuth(event, '{{ url_for('map_view') }}')" class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    <a href="#" onclick="checkAuth(event, '{{ url_for('map_view') }}')"
+                        class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                         <i class="fas fa-map-marked-alt mr-1"></i> Danger Zones
                     </a>
-                    <a href="#" onclick="checkAuth(event, '{{ url_for('safe_route') }}')" class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    <a href="#" onclick="checkAuth(event, '{{ url_for('safe_route') }}')"
+                        class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                         <i class="fas fa-route mr-1"></i> Safe Route
                     </a>
-                    <a href="#" onclick="checkAuth(event, '{{ url_for('contact') }}')" class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    <a href="#" onclick="checkAuth(event, '{{ url_for('contact') }}')"
+                        class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                         <i class="fas fa-envelope mr-1"></i> Contact
                     </a>
-                    <a href="#" onclick="checkAuth(event, '{{ url_for('about') }}')" class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                    <a href="#" onclick="checkAuth(event, '{{ url_for('about') }}')"
+                        class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                         <i class="fas fa-info-circle mr-1"></i> About
                     </a>
-                    <button type="button" onclick="sendSOS()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium ml-3 transition-colors flex items-center">
+                    <!-- Add this inside your <nav> tag list of links -->
+                    <a href="{{ url_for('resource_map') }}"
+                        class="navbar-link text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <i class="fas fa-info-circle mr-1"></i> Resource Map
+                    </a>
+                    <button type="button" onclick="sendSOS()"
+                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium ml-3 transition-colors flex items-center">
                         <i class="fas fa-broadcast-tower mr-1"></i> Send SOS
                     </button>
                     {% if current_user.is_authenticated and current_user.role != 'authority' %}
-                        <a href="{{ url_for('logout') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium ml-3 transition-colors">
-                            <i class="fas fa-sign-out-alt mr-1"></i> Logout
-                        </a>
+                    <a href="{{ url_for('logout') }}"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium ml-3 transition-colors">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </a>
                     {% else %}
-                        <a href="{{ url_for('login') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium ml-3 transition-colors">
-                            <i class="fas fa-sign-in-alt mr-1"></i> Login
-                        </a>
-                        <a href="{{ url_for('register') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium ml-3 transition-colors">
-                            <i class="fas fa-user-plus mr-1"></i> Register
-                        </a>
+                    <a href="{{ url_for('login') }}"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium ml-3 transition-colors">
+                        <i class="fas fa-sign-in-alt mr-1"></i> Login
+                    </a>
+                    <a href="{{ url_for('register') }}"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm font-medium ml-3 transition-colors">
+                        <i class="fas fa-user-plus mr-1"></i> Register
+                    </a>
                     {% endif %}
                 </div>
                 <div class="md:hidden">
@@ -237,113 +1177,134 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Mobile menu, show/hide based on menu state. -->
         <div class="md:hidden hidden" id="mobile-menu">
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white shadow-lg rounded-b-lg">
-                <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
                     <i class="fas fa-exclamation-triangle mr-1"></i> Submit Report
                 </a>
-                <a href="#" onclick="checkAuth(event, '{{ url_for('map_view') }}')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                <a href="#" onclick="checkAuth(event, '{{ url_for('map_view') }}')"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
                     <i class="fas fa-map-marked-alt mr-1"></i> Danger Zones
                 </a>
-                <a href="#" onclick="checkAuth(event, '{{ url_for('safe_route') }}')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                <a href="#" onclick="checkAuth(event, '{{ url_for('safe_route') }}')"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
                     <i class="fas fa-route mr-1"></i> Safe Route
                 </a>
-                <a href="#" onclick="checkAuth(event, '{{ url_for('contact') }}')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                <a href="#" onclick="checkAuth(event, '{{ url_for('contact') }}')"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
                     <i class="fas fa-envelope mr-1"></i> Contact
                 </a>
-                <a href="#" onclick="checkAuth(event, '{{ url_for('about') }}')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                <a href="#" onclick="checkAuth(event, '{{ url_for('about') }}')"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
                     <i class="fas fa-info-circle mr-1"></i> About
                 </a>
-                <button type="button" onclick="sendSOS()" class="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-white bg-red-600 hover:bg-red-700">
+                <a href="{{ url_for('resource_map') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                    <i class="fas fa-campground mr-1"></i> Resource Map
+                </a>
+                <button type="button" onclick="sendSOS()"
+                    class="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-white bg-red-600 hover:bg-red-700">
                     <i class="fas fa-broadcast-tower mr-1"></i> Send SOS
                 </button>
                 {% if current_user.is_authenticated and current_user.role != 'authority' %}
-                    <a href="{{ url_for('logout') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
-                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
-                    </a>
+                <a href="{{ url_for('logout') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                </a>
                 {% else %}
-                    <a href="{{ url_for('login') }}" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700">
-                        <i class="fas fa-sign-in-alt mr-1"></i> Login
-                    </a>
-                    <a href="{{ url_for('register') }}" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
-                        <i class="fas fa-user-plus mr-1"></i> Register
-                    </a>
+                <a href="{{ url_for('login') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700">
+                    <i class="fas fa-sign-in-alt mr-1"></i> Login
+                </a>
+                <a href="{{ url_for('register') }}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50">
+                    <i class="fas fa-user-plus mr-1"></i> Register
+                </a>
                 {% endif %}
             </div>
         </div>
     </nav>
-<!-- HERO SECTION (SLIDESHOW) -->
-<div class="relative pt-16 pb-32 flex content-center items-center justify-center slideshow">
-    
-    <div class="absolute bottom-0 left-0 right-0">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
-            <path fill="#ffffff" fill-opacity="1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,149.3C960,160,1056,160,1152,154.7C1248,149,1344,139,1392,133.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
-        </svg>
-    </div>
-    <!-- Slides with Local Images and Text -->
-    <div class="slide" style="background-image: url('{{ url_for('static', filename='images/bg1.jpg') }}');">
-        <div class="container relative mx-auto px-4" data-aos="fade-up" data-aos-duration="1000">
-            <div class="flex flex-col justify-center text-left min-h-screen">
-                <h1 class="text-white font-bold text-5xl md:text-6xl leading-tight mb-4 ml-4">
-                    ResQ <span class="text-white">Response</span>
-                </h1>
-                <p class="text-white text-xl md:text-2xl max-w-lg mb-8 leading-relaxed">
-                    Connecting communities with authorities for real-time disaster reporting and emergency response.
-                </p>
-                <div class="flex space-x-4">
-                    <button onclick="checkAuth(event, '{{ url_for('report') }}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                        <i class="fas fa-exclamation-triangle mr-2"></i> Report Disaster
-                    </button>
-                    <button onclick="window.location.href='#services'" class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                        <i class="fas fa-info-circle mr-2"></i> Learn More
-                    </button>
+    <!-- HERO SECTION (SLIDESHOW) -->
+    <div class="relative pt-16 pb-32 flex content-center items-center justify-center slideshow">
+
+        <div class="absolute bottom-0 left-0 right-0">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+                <path fill="#ffffff" fill-opacity="1"
+                    d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,149.3C960,160,1056,160,1152,154.7C1248,149,1344,139,1392,133.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z">
+                </path>
+            </svg>
+        </div>
+        <!-- Slides with Local Images and Text -->
+        <div class="slide" style="background-image: url('{{ url_for('static', filename='images/bg1.jpg') }}');">
+            <div class="container relative mx-auto px-4" data-aos="fade-up" data-aos-duration="1000">
+                <div class="flex flex-col justify-center text-left min-h-screen">
+                    <h1 class="text-white font-bold text-5xl md:text-6xl leading-tight mb-4 ml-4">
+                        ResQ <span class="text-white">Response</span>
+                    </h1>
+                    <p class="text-white text-xl md:text-2xl max-w-lg mb-8 leading-relaxed">
+                        Connecting communities with authorities for real-time disaster reporting and emergency response.
+                    </p>
+                    <div class="flex space-x-4">
+                        <button onclick="checkAuth(event, '{{ url_for('report') }}')"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                            <i class="fas fa-exclamation-triangle mr-2"></i> Report Disaster
+                        </button>
+                        <button onclick="window.location.href='#services'"
+                            class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                            <i class="fas fa-info-circle mr-2"></i> Learn More
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slide" style="background-image: url('{{ url_for('static', filename='images/bg2.jpg') }}');">
+            <div class="container relative mx-auto px-4" data-aos="fade-up" data-aos-duration="1000">
+                <div class="flex flex-col justify-center text-left min-h-screen">
+                    <h1 class="text-white font-bold text-5xl md:text-6xl leading-tight mb-4">
+                        ResQ <span class="text-white">Response</span>
+                    </h1>
+                    <p class="text-white text-xl md:text-2xl max-w-lg mb-8 leading-relaxed">
+                        Connecting communities with authorities for real-time disaster reporting and emergency response.
+                    </p>
+                    <div class="flex space-x-4">
+                        <button onclick="checkAuth(event, '{{ url_for('report') }}')"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                            <i class="fas fa-exclamation-triangle mr-2"></i> Report Disaster
+                        </button>
+                        <button onclick="window.location.href='#services'"
+                            class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                            <i class="fas fa-info-circle mr-2"></i> Learn More
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slide" style="background-image: url('{{ url_for('static', filename='images/bg3.jpg') }}');">
+            <div class="container relative mx-auto px-4" data-aos="fade-up" data-aos-duration="1000">
+                <div class="flex flex-col justify-center text-left min-h-screen">
+                    <h1 class="text-white font-bold text-5xl md:text-6xl leading-tight mb-4">
+                        ResQ <span class="text-white">Response</span>
+                    </h1>
+                    <p class="text-white text-xl md:text-2xl max-w-lg mb-8 leading-relaxed">
+                        Connecting communities with authorities for real-time disaster reporting and emergency response.
+                    </p>
+                    <div class="flex space-x-4">
+                        <button onclick="checkAuth(event, '{{ url_for('report') }}')"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                            <i class="fas fa-exclamation-triangle mr-2"></i> Report Disaster
+                        </button>
+                        <button onclick="window.location.href='#services'"
+                            class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                            <i class="fas fa-info-circle mr-2"></i> Learn More
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="slide" style="background-image: url('{{ url_for('static', filename='images/bg2.jpg') }}');">
-        <div class="container relative mx-auto px-4" data-aos="fade-up" data-aos-duration="1000">
-            <div class="flex flex-col justify-center text-left min-h-screen">
-                <h1 class="text-white font-bold text-5xl md:text-6xl leading-tight mb-4">
-                    ResQ <span class="text-white">Response</span>
-                </h1>
-                <p class="text-white text-xl md:text-2xl max-w-lg mb-8 leading-relaxed">
-                    Connecting communities with authorities for real-time disaster reporting and emergency response.
-                </p>
-                <div class="flex space-x-4">
-                    <button onclick="checkAuth(event, '{{ url_for('report') }}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                        <i class="fas fa-exclamation-triangle mr-2"></i> Report Disaster
-                    </button>
-                    <button onclick="window.location.href='#services'" class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                        <i class="fas fa-info-circle mr-2"></i> Learn More
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="slide" style="background-image: url('{{ url_for('static', filename='images/bg3.jpg') }}');">
-        <div class="container relative mx-auto px-4" data-aos="fade-up" data-aos-duration="1000">
-            <div class="flex flex-col justify-center text-left min-h-screen">
-                <h1 class="text-white font-bold text-5xl md:text-6xl leading-tight mb-4">
-                    ResQ <span class="text-white">Response</span>
-                </h1>
-                <p class="text-white text-xl md:text-2xl max-w-lg mb-8 leading-relaxed">
-                    Connecting communities with authorities for real-time disaster reporting and emergency response.
-                </p>
-                <div class="flex space-x-4">
-                    <button onclick="checkAuth(event, '{{ url_for('report') }}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                        <i class="fas fa-exclamation-triangle mr-2"></i> Report Disaster
-                    </button>
-                    <button onclick="window.location.href='#services'" class="bg-white hover:bg-gray-100 text-blue-600 font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                        <i class="fas fa-info-circle mr-2"></i> Learn More
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
     <!-- GOVERNMENT ANNOUNCEMENTS TICKER -->
     <div class="bg-blue-600 text-white py-3 relative overflow-hidden">
         <div class="flex items-center px-4">
@@ -352,24 +1313,32 @@
             </div>
             <div class="overflow-hidden relative w-full">
                 <div class="announcement-ticker whitespace-nowrap">
-                    <span class="mx-4"><i class="fas fa-exclamation-circle mr-2"></i> Government Alert: Stay safe! Follow official channels for updates.</span>
-                    <span class="mx-4"><i class="fas fa-ambulance mr-2"></i> Emergency services are on high alert.</span>
-                    <span class="mx-4"><i class="fas fa-newspaper mr-2"></i> Check local news for the latest instructions.</span>
-                    <span class="mx-4"><i class="fas fa-house-damage mr-2"></i> Shelter information available through the ResQ app.</span>
+                    <span class="mx-4"><i class="fas fa-exclamation-circle mr-2"></i> Government Alert: Stay safe!
+                        Follow official channels for updates.</span>
+                    <span class="mx-4"><i class="fas fa-ambulance mr-2"></i> Emergency services are on high
+                        alert.</span>
+                    <span class="mx-4"><i class="fas fa-newspaper mr-2"></i> Check local news for the latest
+                        instructions.</span>
+                    <span class="mx-4"><i class="fas fa-house-damage mr-2"></i> Shelter information available through
+                        the ResQ app.</span>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <!-- USER GUIDELINES SECTION -->
     <section class="py-16 bg-gray-50" id="guidelines">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="lg:flex lg:items-center lg:justify-between">
                 <div class="lg:w-1/2 mb-10 lg:mb-0" data-aos="fade-right" data-aos-duration="1000">
-                    <div class="relative rounded-xl overflow-hidden shadow-xl transform hover:scale-105 transition-all duration-300">
-                        <img src="{{ url_for('static', filename='images/konstantin-3PNqQNc7pdE-unsplash.jpg') }}" alt="User Guidelines" class="w-full h-auto lg:h-96 object-cover" />
-                        <div class="absolute inset-0 bg-gradient-to-r from-blue-600/50 to-purple-600/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
-                            <span class="text-white text-2xl font-bold"><i class="fas fa-search-plus"></i> View Safety Tips</span>
+                    <div
+                        class="relative rounded-xl overflow-hidden shadow-xl transform hover:scale-105 transition-all duration-300">
+                        <img src="{{ url_for('static', filename='images/bg1.jpg') }}" alt="User Guidelines"
+                            class="w-full h-auto lg:h-96 object-cover" />
+                        <div
+                            class="absolute inset-0 bg-gradient-to-r from-blue-600/50 to-purple-600/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                            <span class="text-white text-2xl font-bold"><i class="fas fa-search-plus"></i> View Safety
+                                Tips</span>
                         </div>
                     </div>
                 </div>
@@ -380,15 +1349,85 @@
                     </h2>
                     <p class="text-lg text-gray-600 leading-relaxed mb-8">
                         Essential tips to keep you safe during emergencies:
-                        Our comprehensive user guidelines are designed to help you stay safe during emergencies. They offer clear, actionable advice on staying informed, assembling an emergency kit, and planning your evacuation routes.
+                        Our comprehensive user guidelines are designed to help you stay safe during emergencies. They
+                        offer clear, actionable advice on staying informed, assembling an emergency kit, and planning
+                        your evacuation routes.
                     </p>
                     <p class="text-lg text-gray-600 leading-relaxed mb-8">
-                        By following these steps, you not only protect yourself but also help safeguard your community. Embrace these practices to be better prepared when disaster strikes.
+                        By following these steps, you not only protect yourself but also help safeguard your community.
+                        Embrace these practices to be better prepared when disaster strikes.
                     </p>
-                    <button onclick="window.location.href='{{ url_for('user_guide') }}'" class="group bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center">
+                    <button onclick="window.location.href='{{ url_for('user_guide') }}'"
+                        class="group bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center">
                         Read More
                         <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
                     </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MOBILE NOTICE BOARD (Mobile Only) -->
+    <section class="mobile-notice-board py-8 bg-white" style="display: none;">
+        <div class="px-4">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-clipboard-list text-blue-600 mr-2"></i>
+                    Notice Board
+                </h2>
+                <span class="text-xs text-gray-500">Updated Today</span>
+            </div>
+
+            <div class="space-y-3">
+                <!-- Notice 1 -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border-l-4 border-blue-600">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-shield-alt text-white text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <h3 class="font-semibold text-gray-800 text-sm">Stay Prepared</h3>
+                            <p class="text-gray-600 text-xs mt-1">Always keep an emergency kit ready with first aid
+                                supplies, water, and important documents.</p>
+                            <span class="text-xs text-blue-600 mt-2 inline-block">Safety Advisory</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notice 2 -->
+                <div class="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-xl border-l-4 border-amber-500">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-exclamation text-white text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <h3 class="font-semibold text-gray-800 text-sm">Report Incidents</h3>
+                            <p class="text-gray-600 text-xs mt-1">Use our quick report feature to inform authorities
+                                about any disaster situation in your area.</p>
+                            <span class="text-xs text-amber-600 mt-2 inline-block">Quick Action</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notice 3 -->
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border-l-4 border-green-600">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-map-marker-alt text-white text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <h3 class="font-semibold text-gray-800 text-sm">Find Safe Zones</h3>
+                            <p class="text-gray-600 text-xs mt-1">Locate nearby shelters and resource camps through our
+                                interactive danger zone map.</p>
+                            <span class="text-xs text-green-600 mt-2 inline-block">Resource Info</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -404,10 +1443,14 @@
                         <span class="absolute bottom-0 left-0 w-20 h-1 bg-blue-600"></span>
                     </h2>
                     <p class="text-lg text-gray-600 leading-relaxed mb-6">
-                        With ResQ, users can report disasters instantly, track danger zones via crowd-sourced heat maps, and receive critical alerts. Our platform bridges the gap between people in need and authorities.
+                        With ResQ, users can report disasters instantly, track danger zones via crowd-sourced heat maps,
+                        and receive critical alerts. Our platform bridges the gap between people in need and
+                        authorities.
                     </p>
                     <p class="text-lg text-gray-600 leading-relaxed mb-8">
-                        Our advanced monitoring system collects data from multiple sources, providing near-real-time updates on developing situations. This approach allows for quicker response times and more effective resource allocation during crisis situations.
+                        Our advanced monitoring system collects data from multiple sources, providing near-real-time
+                        updates on developing situations. This approach allows for quicker response times and more
+                        effective resource allocation during crisis situations.
                     </p>
                     <div class="flex flex-wrap gap-4 mb-8">
                         <div class="flex items-center bg-blue-50 p-3 rounded-lg shadow-sm">
@@ -426,12 +1469,15 @@
                 </div>
                 <div class="lg:w-1/2" data-aos="fade-left" data-aos-duration="1000" data-aos-delay="200">
                     <div class="relative rounded-xl overflow-hidden shadow-xl h-96 group">
-                        <img id="monitoringImage" src="{{ url_for('static', filename='images/scott-graham-5fNmWej4tAA-unsplash.jpg') }}" alt="Monitoring Dashboard" class="w-full h-full object-cover transition-transform duration-5000 ease-in-out transform scale-100 group-hover:scale-110" />
+                        <img id="monitoringImage" src="{{ url_for('static', filename='images/bg1.jpg') }}"
+                            alt="Monitoring Dashboard"
+                            class="w-full h-full object-cover transition-transform duration-5000 ease-in-out transform scale-100 group-hover:scale-110" />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
                             <div class="p-6 text-white">
                                 <h3 class="text-2xl font-bold mb-2">Advanced Monitoring Dashboard</h3>
                                 <p class="mb-4">Track real-time data from multiple sources</p>
-                                <button class="bg-white text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-100 transition-colors">
+                                <button
+                                    class="bg-white text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-100 transition-colors">
                                     <i class="fas fa-desktop mr-2"></i> View Demo
                                 </button>
                             </div>
@@ -441,7 +1487,7 @@
             </div>
         </div>
     </section>
-    
+
     <!-- PUBLIC NOTICE BOARD SECTION -->
     <section class="py-16 bg-gray-50" id="notices">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -451,8 +1497,9 @@
                     Stay informed with the latest updates and emergency announcements from authorities.
                 </p>
             </div>
-            
-            <div class="notice-board bg-gray-100 rounded-xl shadow-xl overflow-hidden relative" data-aos="zoom-in" data-aos-duration="1000">
+
+            <div class="notice-board bg-gray-100 rounded-xl shadow-xl overflow-hidden relative" data-aos="zoom-in"
+                data-aos-duration="1000">
                 <div class="absolute inset-0 bg-black/40"></div>
                 <div class="relative z-10 p-8">
                     <div class="bg-white rounded-xl shadow-lg p-6 backdrop-blur-sm bg-white/95">
@@ -461,14 +1508,17 @@
                                 <i class="fas fa-clipboard-list text-blue-600 mr-3"></i>
                                 Official Announcements
                             </h3>
-                            <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center">
+                            <span
+                                class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center">
                                 <i class="fas fa-clock mr-1"></i> Updated: 7h ago
                             </span>
                         </div>
-                        
+
                         <div class="space-y-6">
-                            <div class="notice-item bg-yellow-50 rounded-lg p-4 shadow-sm relative transform transition-all hover:shadow-md hover:-translate-y-1" data-aos="fade-up" data-aos-duration="800">
-                                <div class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center notice-pin">
+                            <div class="notice-item bg-yellow-50 rounded-lg p-4 shadow-sm relative transform transition-all hover:shadow-md hover:-translate-y-1"
+                                data-aos="fade-up" data-aos-duration="800">
+                                <div
+                                    class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center notice-pin">
                                     <i class="fas fa-thumbtack text-white text-xs"></i>
                                 </div>
                                 <div class="flex items-start">
@@ -476,22 +1526,29 @@
                                         <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
                                     </div>
                                     <div>
-                                        <h4 class="text-lg font-semibold mb-2 text-gray-800">Mandatory Evacuation: Zone A</h4>
+                                        <h4 class="text-lg font-semibold mb-2 text-gray-800">Mandatory Evacuation: Zone
+                                            A</h4>
                                         <p class="text-gray-600 mb-2">
-                                            Due to rising water levels, authorities have ordered an immediate evacuation of all residents in Zone A. Emergency shelters are open at the Community Center and Lincoln High School.
+                                            Due to rising water levels, authorities have ordered an immediate evacuation
+                                            of all residents in Zone A. Emergency shelters are open at the Community
+                                            Center and Lincoln High School.
                                         </p>
                                         <div class="flex justify-between items-center">
-                                            <span class="text-sm text-gray-500">Issued by: Emergency Management Office</span>
-                                            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+                                            <span class="text-sm text-gray-500">Issued by: Emergency Management
+                                                Office</span>
+                                            <button
+                                                class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
                                                 View Map <i class="fas fa-chevron-right ml-1"></i>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="notice-item bg-blue-50 rounded-lg p-4 shadow-sm relative transform transition-all hover:shadow-md hover:-translate-y-1" data-aos="fade-up" data-aos-duration="800" data-aos-delay="100">
-                                <div class="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center notice-pin">
+
+                            <div class="notice-item bg-blue-50 rounded-lg p-4 shadow-sm relative transform transition-all hover:shadow-md hover:-translate-y-1"
+                                data-aos="fade-up" data-aos-duration="800" data-aos-delay="100">
+                                <div
+                                    class="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center notice-pin">
                                     <i class="fas fa-thumbtack text-white text-xs"></i>
                                 </div>
                                 <div class="flex items-start">
@@ -501,20 +1558,26 @@
                                     <div>
                                         <h4 class="text-lg font-semibold mb-2 text-gray-800">Road Closures: Zone B</h4>
                                         <p class="text-gray-600 mb-2">
-                                            Main Street and River Road are closed for emergency repairs following yesterday's flash flooding. Please use alternate routes and follow detour signs.
+                                            Main Street and River Road are closed for emergency repairs following
+                                            yesterday's flash flooding. Please use alternate routes and follow detour
+                                            signs.
                                         </p>
                                         <div class="flex justify-between items-center">
-                                            <span class="text-sm text-gray-500">Issued by: Department of Transportation</span>
-                                            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+                                            <span class="text-sm text-gray-500">Issued by: Department of
+                                                Transportation</span>
+                                            <button
+                                                class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
                                                 View Detours <i class="fas fa-chevron-right ml-1"></i>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="notice-item bg-green-50 rounded-lg p-4 shadow-sm relative transform transition-all hover:shadow-md hover:-translate-y-1" data-aos="fade-up" data-aos-duration="800" data-aos-delay="200">
-                                <div class="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center notice-pin">
+
+                            <div class="notice-item bg-green-50 rounded-lg p-4 shadow-sm relative transform transition-all hover:shadow-md hover:-translate-y-1"
+                                data-aos="fade-up" data-aos-duration="800" data-aos-delay="200">
+                                <div
+                                    class="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center notice-pin">
                                     <i class="fas fa-thumbtack text-white text-xs"></i>
                                 </div>
                                 <div class="flex items-start">
@@ -524,11 +1587,13 @@
                                     <div>
                                         <h4 class="text-lg font-semibold mb-2 text-gray-800">Community Shelter Open</h4>
                                         <p class="text-gray-600 mb-2">
-                                            The Community Center is open as an emergency shelter. Accommodations, food, and medical assistance are available. Pets are welcome in designated areas.
+                                            The Community Center is open as an emergency shelter. Accommodations, food,
+                                            and medical assistance are available. Pets are welcome in designated areas.
                                         </p>
                                         <div class="flex justify-between items-center">
                                             <span class="text-sm text-gray-500">Issued by: Community Services</span>
-                                            <button class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+                                            <button
+                                                class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
                                                 Get Directions <i class="fas fa-chevron-right ml-1"></i>
                                             </button>
                                         </div>
@@ -536,7 +1601,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="mt-6 text-center">
                             <button class="text-blue-600 hover:text-blue-800 font-medium flex items-center mx-auto">
                                 View All Notices <i class="fas fa-chevron-right ml-1"></i>
@@ -547,7 +1612,7 @@
             </div>
         </div>
     </section>
-    
+
     <!-- ADDITIONAL SERVICES SECTION -->
     <section class="py-16 bg-white" id="services">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -560,12 +1625,15 @@
                     Our platform offers multiple ways to help and stay informed during emergencies.
                 </p>
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div class="service-card bg-white rounded-xl shadow-md overflow-hidden" data-aos="fade-up" data-aos-duration="800">
+                <div class="service-card bg-white rounded-xl shadow-md overflow-hidden" data-aos="fade-up"
+                    data-aos-duration="800">
                     <div class="relative">
-                        <img src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?fit=crop&w=700&q=80" alt="Donate Now" class="w-full h-48 object-cover" />
-                        <div class="absolute top-4 right-4 bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
+                        <img src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?fit=crop&w=700&q=80"
+                            alt="Donate Now" class="w-full h-48 object-cover" />
+                        <div
+                            class="absolute top-4 right-4 bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
                             <i class="fas fa-heart"></i>
                         </div>
                     </div>
@@ -573,39 +1641,50 @@
                         <div>
                             <h3 class="text-xl font-bold text-gray-800 mb-2">Donate Now</h3>
                             <p class="text-gray-600 mb-4">
-                                Support disaster relief efforts by contributing to verified campaigns helping affected communities recover.
+                                Support disaster relief efforts by contributing to verified campaigns helping affected
+                                communities recover.
                             </p>
                         </div>
-                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center mt-auto">
+                        <button
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center mt-auto">
                             <i class="fas fa-donate mr-2"></i> Donate
                         </button>
                     </div>
                 </div>
 
-                <div class="service-card bg-white rounded-xl shadow-md overflow-hidden" data-aos="fade-up" data-aos-duration="800" data-aos-delay="100">
+                <div class="service-card bg-white rounded-xl shadow-md overflow-hidden" data-aos="fade-up"
+                    data-aos-duration="800" data-aos-delay="100">
                     <div class="relative">
-                        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?fit=crop&w=700&q=80" alt="Volunteer" class="w-full h-48 object-cover" />
-                        <div class="absolute top-4 right-4 bg-green-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
+                        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?fit=crop&w=700&q=80"
+                            alt="Volunteer" class="w-full h-48 object-cover" />
+                        <div
+                            class="absolute top-4 right-4 bg-green-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
                             <i class="fas fa-hands-helping"></i>
                         </div>
                     </div>
-                    <div class="p-6 flex flex-col justify-between h-full">
+                    <div class="p-6 flex flex-col justify-between h-full cursor-pointer"
+                        onclick="document.getElementById('live-updates-details').scrollIntoView({ behavior: 'smooth' })">
                         <div>
                             <h3 class="text-xl font-bold text-gray-800 mb-2">Volunteer</h3>
                             <p class="text-gray-600 mb-4">
-                                Join local efforts to assist in disaster response and recovery—your help makes a difference.
+                                Join local efforts to assist in disaster response and recovery—your help makes a
+                                difference.
                             </p>
                         </div>
-                        <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center mt-auto">
+                        <button
+                            class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center mt-auto">
                             <i class="fas fa-handshake mr-2"></i> Join Now
                         </button>
                     </div>
                 </div>
 
-                <div class="service-card bg-white rounded-xl shadow-md overflow-hidden" data-aos="fade-up" data-aos-duration="800" data-aos-delay="200">
+                <div class="service-card bg-white rounded-xl shadow-md overflow-hidden" data-aos="fade-up"
+                    data-aos-duration="800" data-aos-delay="200">
                     <div class="relative">
-                        <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?fit=crop&w=700&q=80" alt="Resources" class="w-full h-48 object-cover" />
-                        <div class="absolute top-4 right-4 bg-yellow-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
+                        <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?fit=crop&w=700&q=80"
+                            alt="Resources" class="w-full h-48 object-cover" />
+                        <div
+                            class="absolute top-4 right-4 bg-yellow-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
                             <i class="fas fa-book"></i>
                         </div>
                     </div>
@@ -613,33 +1692,108 @@
                         <div>
                             <h3 class="text-xl font-bold text-gray-800 mb-2">Resources</h3>
                             <p class="text-gray-600 mb-4">
-                                Access guides, checklists, and tools to prepare for and respond to emergencies effectively.
+                                Access guides, checklists, and tools to prepare for and respond to emergencies
+                                effectively.
                             </p>
                         </div>
-                        <button class="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center mt-auto">
+                        <button
+                            class="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center mt-auto">
                             <i class="fas fa-tools mr-2"></i> Explore
                         </button>
                     </div>
                 </div>
 
-                <div class="service-card bg-white rounded-xl shadow-md overflow-hidden" data-aos="fade-up" data-aos-duration="800" data-aos-delay="300">
+                <div class="service-card bg-white rounded-xl shadow-md overflow-hidden" data-aos="fade-up"
+                    data-aos-duration="800" data-aos-delay="300">
+
+                    <!-- IMAGE BLOCK (NEW) -->
                     <div class="relative">
-                        <img src="https://images.unsplash.com/photo-1527477390519-579ad8923c32?fit=crop&w=700&q=80" alt="Live Updates" class="w-full h-48 object-cover" />
-                        <div class="absolute top-4 right-4 bg-red-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
+                        <img src="https://t4.ftcdn.net/jpg/18/13/91/79/240_F_1813917926_XAConAdozlKBN6hkZJgBRQ01vu2erGCU.jpg"
+                            alt="Live Disaster Updates" class="w-full h-48 object-cover" />
+                        <div
+                            class="absolute top-4 right-4 bg-red-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
                             <i class="fas fa-rss"></i>
                         </div>
                     </div>
+
+                    <!-- CONTENT -->
                     <div class="p-6 flex flex-col justify-between h-full">
                         <div>
                             <h3 class="text-xl font-bold text-gray-800 mb-2">Live Updates</h3>
-                            <p class="text-gray-600 mb-4">
-                                Stay updated with real-time news and alerts from authorities and fellow users.
-                            </p>
+
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm text-gray-600">USGS & NOAA Alerts</span>
+                                <span id="live-time" class="text-xs text-gray-500"></span>
+                            </div>
+
+                            <div id="live-list" class="space-y-2 text-sm max-h-32 overflow-y-auto">
+                                <p class="text-gray-400">Loading updates...</p>
+                            </div>
                         </div>
-                        <button class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center mt-auto">
-                            <i class="fas fa-broadcast-tower mr-2"></i> Tune In
+                    </div>
+                </div>
+
+    </section>
+    <!-- DETAILED LIVE UPDATES SECTION -->
+    <section id="live-updates-details" class="py-16 bg-gray-50">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">🚨 Live Disaster Alerts (US)</h2>
+                    <span id="live-time-details" class="text-sm text-gray-500"></span>
+                </div>
+
+                <!-- Alert Category Tabs -->
+                <div class="mb-6">
+                    <div class="flex flex-wrap gap-2 border-b border-gray-200 pb-2">
+                        <button onclick="switchAlertTab('earthquake')" id="tab-earthquake"
+                            class="alert-tab flex items-center px-4 py-2 rounded-t-lg font-medium text-sm transition-all bg-blue-600 text-white">
+                            <i class="fas fa-globe-americas mr-2"></i>
+                            Earthquakes
+                            <span id="count-earthquake"
+                                class="ml-2 bg-white text-blue-600 text-xs px-2 py-0.5 rounded-full">0</span>
+                        </button>
+                        <button onclick="switchAlertTab('flood')" id="tab-flood"
+                            class="alert-tab flex items-center px-4 py-2 rounded-t-lg font-medium text-sm transition-all bg-gray-100 text-gray-600 hover:bg-gray-200">
+                            <i class="fas fa-water mr-2"></i>
+                            Floods
+                            <span id="count-flood"
+                                class="ml-2 bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">0</span>
+                        </button>
+                        <button onclick="switchAlertTab('tornado')" id="tab-tornado"
+                            class="alert-tab flex items-center px-4 py-2 rounded-t-lg font-medium text-sm transition-all bg-gray-100 text-gray-600 hover:bg-gray-200">
+                            <i class="fas fa-wind mr-2"></i>
+                            Tornadoes
+                            <span id="count-tornado"
+                                class="ml-2 bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">0</span>
+                        </button>
+                        <button onclick="switchAlertTab('severe_storm')" id="tab-severe_storm"
+                            class="alert-tab flex items-center px-4 py-2 rounded-t-lg font-medium text-sm transition-all bg-gray-100 text-gray-600 hover:bg-gray-200">
+                            <i class="fas fa-bolt mr-2"></i>
+                            Severe Storms
+                            <span id="count-severe_storm"
+                                class="ml-2 bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">0</span>
+                        </button>
+                        <button onclick="switchAlertTab('wildfire')" id="tab-wildfire"
+                            class="alert-tab flex items-center px-4 py-2 rounded-t-lg font-medium text-sm transition-all bg-gray-100 text-gray-600 hover:bg-gray-200">
+                            <i class="fas fa-fire mr-2"></i>
+                            Wildfires
+                            <span id="count-wildfire"
+                                class="ml-2 bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">0</span>
+                        </button>
+                        <button onclick="switchAlertTab('other')" id="tab-other"
+                            class="alert-tab flex items-center px-4 py-2 rounded-t-lg font-medium text-sm transition-all bg-gray-100 text-gray-600 hover:bg-gray-200">
+                            <i class="fas fa-exclamation-circle mr-2"></i>
+                            Other
+                            <span id="count-other"
+                                class="ml-2 bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">0</span>
                         </button>
                     </div>
+                </div>
+
+                <!-- Alert Content -->
+                <div id="live-list-details" class="space-y-4 max-h-96 overflow-y-auto">
+                    <p class="text-gray-500 text-sm">Loading detailed alerts...</p>
                 </div>
             </div>
         </div>
@@ -664,7 +1818,9 @@
                         <i class="fas fa-chevron-down faq-toggle text-gray-500"></i>
                     </div>
                     <div class="faq-answer">
-                        <p class="text-gray-600">You can report a disaster by clicking the 'Submit Report' button in the navigation bar, logging in (if not already), and filling out the disaster report form with details about the incident.</p>
+                        <p class="text-gray-600">You can report a disaster by clicking the 'Submit Report' button in the
+                            navigation bar, logging in (if not already), and filling out the disaster report form with
+                            details about the incident.</p>
                     </div>
                 </div>
                 <div class="faq-item" data-aos="fade-up" data-aos-duration="800" data-aos-delay="100">
@@ -673,7 +1829,9 @@
                         <i class="fas fa-chevron-down faq-toggle text-gray-500"></i>
                     </div>
                     <div class="faq-answer">
-                        <p class="text-gray-600">The Send SOS feature allows you to send an emergency alert with your location to authorities if you're in immediate danger. Ensure you're logged in and have location services enabled.</p>
+                        <p class="text-gray-600">The Send SOS feature allows you to send an emergency alert with your
+                            location to authorities if you're in immediate danger. Ensure you're logged in and have
+                            location services enabled.</p>
                     </div>
                 </div>
                 <div class="faq-item" data-aos="fade-up" data-aos-duration="800" data-aos-delay="200">
@@ -682,7 +1840,8 @@
                         <i class="fas fa-chevron-down faq-toggle text-gray-500"></i>
                     </div>
                     <div class="faq-answer">
-                        <p class="text-gray-600">Use the 'Danger Zones' link in the navigation to access real-time crowd-sourced heat maps and critical alerts about hazardous areas in your region.</p>
+                        <p class="text-gray-600">Use the 'Danger Zones' link in the navigation to access real-time
+                            crowd-sourced heat maps and critical alerts about hazardous areas in your region.</p>
                     </div>
                 </div>
             </div>
@@ -704,25 +1863,42 @@
                 <div>
                     <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
                     <ul class="space-y-2">
-                        <li><a href="{{ url_for('about') }}" class="text-gray-400 hover:text-blue-400 transition-colors"><i class="fas fa-info-circle mr-2"></i> About Us</a></li>
-                        <li><a href="{{ url_for('contact') }}" class="text-gray-400 hover:text-blue-400 transition-colors"><i class="fas fa-envelope mr-2"></i> Contact</a></li>
-                        <li><a href="{{ url_for('user_guide') }}" class="text-gray-400 hover:text-blue-400 transition-colors"><i class="fas fa-book mr-2"></i> Guidelines</a></li>
-                        <li><a href="{{ url_for('map_view') }}" class="text-gray-400 hover:text-blue-400 transition-colors"><i class="fas fa-map-marked-alt mr-2"></i> Danger Zones</a></li>
+                        <li><a href="{{ url_for('about') }}"
+                                class="text-gray-400 hover:text-blue-400 transition-colors"><i
+                                    class="fas fa-info-circle mr-2"></i> About Us</a></li>
+                        <li><a href="{{ url_for('contact') }}"
+                                class="text-gray-400 hover:text-blue-400 transition-colors"><i
+                                    class="fas fa-envelope mr-2"></i> Contact</a></li>
+                        <li><a href="{{ url_for('user_guide') }}"
+                                class="text-gray-400 hover:text-blue-400 transition-colors"><i
+                                    class="fas fa-book mr-2"></i> Guidelines</a></li>
+                        <li><a href="{{ url_for('map_view') }}"
+                                class="text-gray-400 hover:text-blue-400 transition-colors"><i
+                                    class="fas fa-map-marked-alt mr-2"></i> Danger Zones</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="text-lg font-semibold mb-4">Contact Us</h4>
                     <p class="text-gray-400 mb-2"><i class="fas fa-phone-alt mr-2"></i> +1-800-RESQ-NOW</p>
                     <p class="text-gray-400 mb-2"><i class="fas fa-envelope mr-2"></i> support@resq.org</p>
-                    <p class="text-gray-400"><i class="fas fa-map-marker-alt mr-2"></i> 123 Safety Lane, Resilience City</p>
+                    <p class="text-gray-400"><i class="fas fa-map-marker-alt mr-2"></i> 123 Safety Lane, Resilience City
+                    </p>
                 </div>
                 <div>
                     <h4 class="text-lg font-semibold mb-4">Follow Us</h4>
                     <div class="flex space-x-4">
-                        <a href="#" class="text-gray-400 hover:text-blue-400 transition-colors transform hover:scale-110"><i class="fab fa-twitter text-2xl"></i></a>
-                        <a href="#" class="text-gray-400 hover:text-blue-400 transition-colors transform hover:scale-110"><i class="fab fa-facebook text-2xl"></i></a>
-                        <a href="#" class="text-gray-400 hover:text-blue-400 transition-colors transform hover:scale-110"><i class="fab fa-instagram text-2xl"></i></a>
-                        <a href="#" class="text-gray-400 hover:text-blue-400 transition-colors transform hover:scale-110"><i class="fab fa-linkedin text-2xl"></i></a>
+                        <a href="#"
+                            class="text-gray-400 hover:text-blue-400 transition-colors transform hover:scale-110"><i
+                                class="fab fa-twitter text-2xl"></i></a>
+                        <a href="#"
+                            class="text-gray-400 hover:text-blue-400 transition-colors transform hover:scale-110"><i
+                                class="fab fa-facebook text-2xl"></i></a>
+                        <a href="#"
+                            class="text-gray-400 hover:text-blue-400 transition-colors transform hover:scale-110"><i
+                                class="fab fa-instagram text-2xl"></i></a>
+                        <a href="#"
+                            class="text-gray-400 hover:text-blue-400 transition-colors transform hover:scale-110"><i
+                                class="fab fa-linkedin text-2xl"></i></a>
                     </div>
                 </div>
             </div>
@@ -739,27 +1915,27 @@
 
         // Slideshow for Hero Section
         const slides = document.querySelectorAll('.slide');
-let currentSlide = 0;
+        let currentSlide = 0;
 
-function showSlide(index) {
-    slides.forEach((slide, i) => {
-        slide.classList.remove('active');
-        if (i === index) {
-            slide.classList.add('active');
-            // Ensure text and buttons are visible
-            const text = slide.querySelector('h1, p, button');
-            if (text) text.style.display = 'block';
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                if (i === index) {
+                    slide.classList.add('active');
+                    // Ensure text and buttons are visible
+                    const text = slide.querySelector('h1, p, button');
+                    if (text) text.style.display = 'block';
+                }
+            });
         }
-    });
-}
 
-function nextSlide() {
-    currentSlide = (currentSlide + 1) % slides.length;
-    showSlide(currentSlide);
-}
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % slides.length;
+            showSlide(currentSlide);
+        }
 
-setInterval(nextSlide, 5000); // Change slide every 5 seconds
-showSlide(currentSlide); // Initialize with first slide
+        setInterval(nextSlide, 5000); // Change slide every 5 seconds
+        showSlide(currentSlide); // Initialize with first slide
 
         function toggleMenu() {
             const menu = document.getElementById('mobile-menu');
@@ -768,23 +1944,24 @@ showSlide(currentSlide); // Initialize with first slide
 
 
 
-function checkAuth(event, url) {
-    event.preventDefault();
-    var isAuthenticated = {{ current_user.is_authenticated | tojson | safe }};
-    var role = '{{ current_user.role | default("") | safe }}';
-    console.log('checkAuth called - User authenticated:', isAuthenticated, 'Role:', role, 'URL:', url);
+        function checkAuth(event, url) {
+            event.preventDefault();
+            var isAuthenticated = {{ current_user.is_authenticated | tojson | safe
+        }};
+        var role = '{{ current_user.role | default("") | safe }}';
+        console.log('checkAuth called - User authenticated:', isAuthenticated, 'Role:', role, 'URL:', url);
 
-    if (!isAuthenticated) {
-        alert("Please login to use this function.");
-        window.location.href = "{{ url_for('login') }}";
-    } else if (url === '{{ url_for('authority_dashboard') }}' && role !== 'authority') {
-        alert("Access denied. Authority role required.");
-        window.location.href = "{{ url_for('index') }}";
-    } else if (url === '/sos') {
-        sendSOS();
-    } else {
-        window.location.href = url;
-    }
+        if (!isAuthenticated) {
+            alert("Please login to use this function.");
+            window.location.href = "{{ url_for('login') }}";
+        } else if (url === '{{ url_for('authority_dashboard') }}' && role !== 'authority') {
+            alert("Access denied. Authority role required.");
+            window.location.href = "{{ url_for('index') }}";
+        } else if (url === '/sos') {
+            sendSOS();
+        } else {
+            window.location.href = url;
+        }
 }
 
         function sendSOS() {
@@ -795,7 +1972,7 @@ function checkAuth(event, url) {
                 return;
             }
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
+                navigator.geolocation.getCurrentPosition(function (position) {
                     fetch('/sos', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -803,18 +1980,18 @@ function checkAuth(event, url) {
                             location: position.coords.latitude + ', ' + position.coords.longitude
                         })
                     })
-                    .then(response => {
-                        if (response.ok) {
-                            alert('SOS alert sent to the authorities!');
-                        } else {
+                        .then(response => {
+                            if (response.ok) {
+                                alert('SOS alert sent to the authorities!');
+                            } else {
+                                alert('Error sending SOS');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
                             alert('Error sending SOS');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Error sending SOS');
-                    });
-                }, function(error) {
+                        });
+                }, function (error) {
                     console.error('Geolocation error:', error);
                     alert('Unable to retrieve location. Please ensure location services are enabled.');
                 });
@@ -839,6 +2016,607 @@ function checkAuth(event, url) {
                 }
             }
         });
+
+        // Store alerts data globally for tab switching
+        let alertsData = { events: [], categorized: {} };
+        let currentTab = 'earthquake';
+
+        // Category display configuration
+        const categoryConfig = {
+            earthquake: { icon: 'fa-globe-americas', label: 'Earthquakes', color: 'blue' },
+            flood: { icon: 'fa-water', label: 'Floods', color: 'cyan' },
+            tornado: { icon: 'fa-wind', label: 'Tornadoes', color: 'purple' },
+            severe_storm: { icon: 'fa-bolt', label: 'Severe Storms', color: 'orange' },
+            wildfire: { icon: 'fa-fire', label: 'Wildfires', color: 'red' },
+            other: { icon: 'fa-exclamation-circle', label: 'Other', color: 'gray' }
+        };
+
+        function switchAlertTab(category) {
+            currentTab = category;
+
+            // Update tab styles
+            document.querySelectorAll('.alert-tab').forEach(tab => {
+                const tabCategory = tab.id.replace('tab-', '');
+                const countBadge = tab.querySelector('span');
+
+                if (tabCategory === category) {
+                    tab.className = 'alert-tab flex items-center px-4 py-2 rounded-t-lg font-medium text-sm transition-all bg-blue-600 text-white';
+                    if (countBadge) {
+                        countBadge.className = 'ml-2 bg-white text-blue-600 text-xs px-2 py-0.5 rounded-full';
+                    }
+                } else {
+                    tab.className = 'alert-tab flex items-center px-4 py-2 rounded-t-lg font-medium text-sm transition-all bg-gray-100 text-gray-600 hover:bg-gray-200';
+                    if (countBadge) {
+                        countBadge.className = 'ml-2 bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full';
+                    }
+                }
+            });
+
+            // Render alerts for selected category
+            renderCategorizedAlerts(category);
+        }
+
+        function renderCategorizedAlerts(category) {
+            const listDetails = document.getElementById('live-list-details');
+            if (!listDetails) return;
+
+            const alerts = alertsData.categorized[category] || [];
+            listDetails.innerHTML = '';
+
+            if (alerts.length === 0) {
+                listDetails.innerHTML = `<p class='text-gray-500 text-sm text-center py-8'>No ${categoryConfig[category]?.label || category} alerts currently active</p>`;
+                return;
+            }
+
+            alerts.forEach(e => {
+                const color =
+                    e.severity >= 5 ? 'border-red-600 bg-red-50' :
+                        e.severity >= 4 ? 'border-orange-500 bg-orange-50' :
+                            'border-yellow-500 bg-yellow-50';
+
+                const div = document.createElement('div');
+                div.className = `border-l-4 p-4 rounded ${color}`;
+
+                // Truncate details for display
+                const shortDetails = e.details && e.details.length > 200
+                    ? e.details.substring(0, 200) + '...'
+                    : e.details || '';
+
+                div.innerHTML = `
+      <div class="flex justify-between items-start mb-2">
+        <h3 class="font-semibold text-gray-800">${e.title}</h3>
+        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">${e.source}</span>
+      </div>
+      <p class="text-sm text-gray-600 mb-2">${shortDetails}</p>
+      <p class="text-xs text-gray-500">
+        <i class="fas fa-exclamation-triangle mr-1"></i>Severity: ${e.severity} • 
+        <i class="fas fa-clock mr-1"></i>${new Date(e.time).toLocaleString()}
+      </p>
+    `;
+
+                listDetails.appendChild(div);
+            });
+        }
+
+        async function loadLiveUpdates() {
+            try {
+                const res = await fetch('/api/live_updates');
+                const data = await res.json();
+
+                const list = document.getElementById('live-list');
+                const time = document.getElementById('live-time');
+                const timeDetails = document.getElementById('live-time-details');
+
+                list.innerHTML = '';
+
+                if (!data.events || data.events.length === 0) {
+                    list.innerHTML = "<p class='text-sm text-gray-500'>No active alerts</p>";
+                    // Reset counts
+                    Object.keys(categoryConfig).forEach(cat => {
+                        const countEl = document.getElementById(`count-${cat}`);
+                        if (countEl) countEl.textContent = '0';
+                    });
+                    return;
+                }
+
+                time.textContent = 'Updated: ' + new Date(data.last_updated).toLocaleTimeString();
+                if (timeDetails) timeDetails.textContent = time.textContent;
+
+                // Categorize alerts
+                alertsData.events = data.events;
+                alertsData.categorized = {};
+
+                Object.keys(categoryConfig).forEach(cat => {
+                    alertsData.categorized[cat] = [];
+                });
+
+                data.events.forEach(e => {
+                    const category = e.category || 'other';
+                    if (!alertsData.categorized[category]) {
+                        alertsData.categorized[category] = [];
+                    }
+                    alertsData.categorized[category].push(e);
+                });
+
+                // Update tab counts
+                Object.keys(categoryConfig).forEach(cat => {
+                    const countEl = document.getElementById(`count-${cat}`);
+                    if (countEl) {
+                        countEl.textContent = alertsData.categorized[cat]?.length || 0;
+                    }
+                });
+
+                // Render compact list for sidebar widget
+                data.events.slice(0, 3).forEach(e => {
+                    const color =
+                        e.severity >= 5 ? 'border-red-600 bg-red-50' :
+                            e.severity >= 4 ? 'border-orange-500 bg-orange-50' :
+                                'border-yellow-500 bg-yellow-50';
+
+                    const div = document.createElement('div');
+                    div.className = `border-l-4 p-3 rounded ${color}`;
+
+                    div.innerHTML = `
+        <div class="flex justify-between">
+          <h3 class="font-semibold text-sm">${e.title}</h3>
+          <span class="text-xs text-gray-500">${e.source}</span>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">
+          Severity: ${e.severity} • ${new Date(e.time).toLocaleString()}
+        </p>
+      `;
+
+                    list.appendChild(div);
+                });
+
+                // Render detailed categorized view
+                renderCategorizedAlerts(currentTab);
+
+                // Update mobile UI elements
+                updateMobileAlertBanner(data.events);
+                updateMobileIndicators();
+
+            } catch (err) {
+                console.error('Error loading live updates:', err);
+                document.getElementById('live-list').innerHTML =
+                    "<p class='text-red-500 text-sm'>Failed to load updates</p>";
+            }
+        }
+
+        // ========== MOBILE FEATURE FUNCTIONS ==========
+
+        // Toggle profile dropdown
+        function toggleProfileDropdown() {
+            const dropdown = document.getElementById('profile-dropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('show');
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            const dropdown = document.getElementById('profile-dropdown');
+            const profileBtn = e.target.closest('.profile-btn');
+            if (dropdown && !profileBtn && !e.target.closest('.profile-dropdown')) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Scroll to alerts section and switch tab
+        function scrollToAlerts(category) {
+            switchAlertTab(category);
+            document.getElementById('live-updates-details').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Share alert function
+        function shareAlert() {
+            const alertTitle = document.getElementById('mobile-alert-title')?.textContent || 'ResQ Alert';
+            const alertText = `${alertTitle} - Check ResQ for more details`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'ResQ Alert',
+                    text: alertText,
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(alertText).then(() => {
+                    alert('Alert copied to clipboard!');
+                }).catch(() => {
+                    alert('Share not supported on this device');
+                });
+            }
+        }
+
+        // Speak alert function (text-to-speech)
+        function speakAlert() {
+            const alertTitle = document.getElementById('mobile-alert-title')?.textContent || '';
+            const alertIssuer = document.getElementById('mobile-alert-issuer')?.textContent || '';
+
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(`${alertTitle}. ${alertIssuer}`);
+                utterance.rate = 0.9;
+                speechSynthesis.speak(utterance);
+            } else {
+                alert('Text-to-speech not supported on this device');
+            }
+        }
+
+        // Store alerts for slideshow
+        let mobileAlerts = [];
+        let currentAlertIndex = 0;
+        let alertSlideInterval = null;
+
+        // Update mobile alert banner with slideshow capability
+        function updateMobileAlertBanner(events) {
+            // Clear existing interval
+            if (alertSlideInterval) clearInterval(alertSlideInterval);
+
+            if (!events || events.length === 0) {
+                const magEl = document.getElementById('mobile-alert-magnitude');
+                magEl.innerHTML = '<span class="mag-num">✓</span><span class="mag-unit">SAFE</span>';
+                document.getElementById('mobile-alert-title').textContent = 'All clear in your area';
+                const badge = document.getElementById('mobile-alert-badge');
+                badge.innerHTML = '<i class="fas fa-shield-alt"></i><span>ALL CLEAR</span>';
+                badge.className = 'severity-badge';
+                document.getElementById('mobile-alert-issuer').textContent = 'System';
+                const locEl = document.getElementById('mobile-alert-location');
+                locEl.innerHTML = '<i class="fas fa-map-marker-alt"></i><span>No hazards detected</span>';
+                document.getElementById('mobile-alert-time').textContent = 'Just now';
+                document.getElementById('mobile-slide-counter').textContent = '0 of 0';
+                document.getElementById('mobile-alert-banner').className = 'mobile-alert-banner';
+                return;
+            }
+
+            // Sort by time (latest first) and store
+            mobileAlerts = events.sort((a, b) => new Date(b.time) - new Date(a.time));
+            currentAlertIndex = 0;
+
+            // Show first alert
+            showMobileAlert(0);
+
+            // Auto-cycle every 5 seconds if more than 1 alert
+            if (mobileAlerts.length > 1) {
+                alertSlideInterval = setInterval(() => {
+                    currentAlertIndex = (currentAlertIndex + 1) % mobileAlerts.length;
+                    showMobileAlert(currentAlertIndex);
+                }, 5000);
+            }
+        }
+
+        // Show specific alert by index
+        function showMobileAlert(index) {
+            if (!mobileAlerts || mobileAlerts.length === 0) return;
+
+            const alert = mobileAlerts[index];
+            const severity = alert.severity || 3;
+
+            // Add fade transition
+            const banner = document.getElementById('mobile-alert-banner');
+            banner.style.opacity = '0';
+            banner.style.transform = 'translateY(5px)';
+
+            setTimeout(() => {
+                // Extract magnitude from title (e.g., "M 2.5 - 10km N of City")
+                let magNum = '--';
+                let magUnit = 'MAG';
+                let titleText = alert.title || 'Alert';
+
+                const magMatch = titleText.match(/M\s*([\d.]+)/i);
+                if (magMatch) {
+                    magNum = magMatch[1];
+                    magUnit = 'MAG';
+                    // Clean up title - remove magnitude prefix for cleaner display
+                    titleText = titleText.replace(/^M\s*[\d.]+\s*[-–]\s*/i, '').trim();
+                } else if (alert.category === 'earthquake' && alert.severity) {
+                    magNum = alert.severity.toFixed(1);
+                    magUnit = 'MAG';
+                } else if (alert.category) {
+                    // For non-earthquake alerts, show category icon
+                    const icons = {
+                        'flood': '🌊',
+                        'severe_storm': '⛈️',
+                        'tornado': '🌪️',
+                        'fire': '🔥'
+                    };
+                    magNum = icons[alert.category] || '⚠️';
+                    magUnit = alert.category.toUpperCase().replace('_', ' ').substring(0, 5);
+                }
+
+                // Update magnitude badge
+                const magEl = document.getElementById('mobile-alert-magnitude');
+                magEl.innerHTML = `<span class="mag-num">${magNum}</span><span class="mag-unit">${magUnit}</span>`;
+
+                document.getElementById('mobile-alert-title').textContent = titleText;
+                document.getElementById('mobile-alert-issuer').textContent = alert.source || 'USGS';
+
+                // Update slide counter
+                const slideCounter = document.getElementById('mobile-slide-counter');
+                if (slideCounter) {
+                    slideCounter.textContent = `${index + 1} of ${mobileAlerts.length}`;
+                }
+
+                // Set badge based on severity
+                const badge = document.getElementById('mobile-alert-badge');
+                let badgeIcon = 'fa-shield-alt';
+                let badgeText = 'LOW RISK';
+
+                if (severity >= 5) {
+                    badgeIcon = 'fa-exclamation-triangle';
+                    badgeText = 'HIGH RISK';
+                    badge.className = 'severity-badge';
+                    banner.className = 'mobile-alert-banner alert-high';
+                } else if (severity >= 4) {
+                    badgeIcon = 'fa-exclamation-circle';
+                    badgeText = 'MODERATE';
+                    badge.className = 'severity-badge';
+                    banner.className = 'mobile-alert-banner alert-medium';
+                } else {
+                    badgeIcon = 'fa-shield-alt';
+                    badgeText = 'LOW RISK';
+                    badge.className = 'severity-badge';
+                    banner.className = 'mobile-alert-banner';
+                }
+                badge.innerHTML = `<i class="fas ${badgeIcon}"></i><span>${badgeText}</span>`;
+
+                // Format time nicely
+                let timeText = '--';
+                if (alert.time) {
+                    const date = new Date(alert.time);
+                    const now = new Date();
+                    const diffMs = now - date;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const diffHours = Math.floor(diffMs / 3600000);
+
+                    if (diffMins < 60) {
+                        timeText = diffMins <= 1 ? 'Just now' : `${diffMins}m ago`;
+                    } else if (diffHours < 24) {
+                        timeText = `${diffHours}h ago`;
+                    } else {
+                        timeText = date.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    }
+                }
+
+                const location = alert.location || alert.area || 'Unknown location';
+
+                document.getElementById('mobile-alert-time').textContent = timeText;
+
+                // Update location with icon
+                const locEl = document.getElementById('mobile-alert-location');
+                locEl.innerHTML = `<i class="fas fa-map-marker-alt"></i><span>${location}</span>`;
+
+                banner.style.opacity = '1';
+                banner.style.transform = 'translateY(0)';
+            }, 150);
+        }
+
+        // Navigation functions for alert slider
+        function prevAlert() {
+            if (!mobileAlerts || mobileAlerts.length <= 1) return;
+            clearInterval(alertSlideInterval);
+            currentAlertIndex = (currentAlertIndex - 1 + mobileAlerts.length) % mobileAlerts.length;
+            showMobileAlert(currentAlertIndex);
+            // Restart auto-cycle
+            alertSlideInterval = setInterval(() => {
+                currentAlertIndex = (currentAlertIndex + 1) % mobileAlerts.length;
+                showMobileAlert(currentAlertIndex);
+            }, 5000);
+        }
+
+        function nextAlert() {
+            if (!mobileAlerts || mobileAlerts.length <= 1) return;
+            clearInterval(alertSlideInterval);
+            currentAlertIndex = (currentAlertIndex + 1) % mobileAlerts.length;
+            showMobileAlert(currentAlertIndex);
+            // Restart auto-cycle
+            alertSlideInterval = setInterval(() => {
+                currentAlertIndex = (currentAlertIndex + 1) % mobileAlerts.length;
+                showMobileAlert(currentAlertIndex);
+            }, 5000);
+        }
+
+        // Update mobile alert indicators counts
+        function updateMobileIndicators() {
+            const earthquakeCount = alertsData.categorized.earthquake?.length || 0;
+            const floodCount = alertsData.categorized.flood?.length || 0;
+            const stormCount = alertsData.categorized.severe_storm?.length || 0;
+            const tornadoCount = alertsData.categorized.tornado?.length || 0;
+
+            const mobileEarthquake = document.getElementById('mobile-count-earthquake');
+            const mobileFlood = document.getElementById('mobile-count-flood');
+            const mobileStorm = document.getElementById('mobile-count-storm');
+            const mobileTornado = document.getElementById('mobile-count-tornado');
+
+            if (mobileEarthquake) mobileEarthquake.textContent = earthquakeCount;
+            if (mobileFlood) mobileFlood.textContent = floodCount;
+            if (mobileStorm) mobileStorm.textContent = stormCount;
+            if (mobileTornado) mobileTornado.textContent = tornadoCount;
+        }
+
+        // Get user location for mobile header
+        function updateMobileLocation() {
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        try {
+                            // Use reverse geocoding (free OpenStreetMap Nominatim API)
+                            const lat = position.coords.latitude;
+                            const lon = position.coords.longitude;
+                            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                            const data = await response.json();
+
+                            const locationText = document.getElementById('mobile-location-text');
+                            const locationSubtext = document.getElementById('mobile-location-subtext');
+
+                            if (locationText && data.address) {
+                                locationText.textContent = data.address.city || data.address.town || data.address.village || 'Your Location';
+                                locationSubtext.textContent = data.address.road || data.address.suburb || data.address.county || '';
+                            }
+                        } catch (err) {
+                            console.log('Geocoding failed, using default location');
+                        }
+                    },
+                    (error) => {
+                        console.log('Geolocation denied or failed');
+                        document.getElementById('mobile-location-subtext').textContent = 'Enable location for alerts';
+                    },
+                    { timeout: 5000 }
+                );
+            }
+        }
+
+        // Initialize mobile features
+        updateMobileLocation();
+
+        loadLiveUpdates();
+        setInterval(loadLiveUpdates, 10 * 60 * 1000);
+
     </script>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let previewMap;
+
+        // 1. Load Google Maps API (Dynamically fetches key like your map.html)
+        async function loadPreviewMapScript() {
+            try {
+                // Check if Google Maps is already loaded to avoid errors
+                if (typeof google === 'object' && typeof google.maps === 'object') {
+                    initPreviewMap();
+                    return;
+                }
+
+                const response = await fetch('/api/maps/key');
+                const data = await response.json();
+                const apiKey = data.api_key;
+
+                const script = document.createElement('script');
+                // visualiztion library is REQUIRED for the heatmap
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=visualization`;
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+                
+                script.onload = () => {
+                    initPreviewMap();
+                };
+            } catch (error) {
+                console.error('Error loading Google Maps:', error);
+            }
+        }
+
+        // 2. Initialize the Map
+        function initPreviewMap() {
+            // Get User Location first
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        renderMap(position.coords.latitude, position.coords.longitude);
+                    },
+                    (error) => {
+                        console.log("Location denied, using default");
+                        renderMap(20.5937, 78.9629); // Default fallback
+                    }
+                );
+            } else {
+                renderMap(20.5937, 78.9629);
+            }
+        }
+
+        // 3. Render Map & Heatmap Data
+        function renderMap(lat, lng) {
+            const mapEl = document.getElementById('mobile-preview-map');
+            if (!mapEl) return;
+
+            // Create Google Map with CLEANEST possible interface
+            previewMap = new google.maps.Map(mapEl, {
+                zoom: 12,
+                center: { lat: lat, lng: lng },
+                
+                // Hides all standard buttons (Zoom, Street View, Map Type)
+                disableDefaultUI: true,       
+                
+                // Disables scrolling/panning inside the preview
+                gestureHandling: 'none',      
+                
+                // Removes keyboard shortcuts
+                keyboardShortcuts: false,     
+                
+                // Hides POI labels (businesses, landmarks) for a cleaner background look
+                styles: [                     
+                    { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+                    { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] }
+                ]
+            });
+
+            
+
+            // 4. Fetch Live Data & Add Heatmap (Just like map.html)
+            fetch("/danger_zones")
+                .then(response => response.json())
+                .then(data => {
+                    // Convert data to Google Maps points
+                    const heatmapData = data.map(zone => ({
+                        location: new google.maps.LatLng(zone.latitude, zone.longitude),
+                        weight: zone.report_count
+                    }));
+
+                    // Add Heatmap Layer
+                    const heatmap = new google.maps.visualization.HeatmapLayer({
+                        data: heatmapData,
+                        map: previewMap,
+                        gradient: [
+                            'rgba(0, 255, 0, 0)',
+                            'rgba(0, 255, 0, 0.5)',
+                            'rgba(255, 255, 0, 0.7)',
+                            'rgba(255, 165, 0, 0.8)',
+                            'rgba(255, 0, 0, 1)'
+                        ],
+                        radius: 35,
+                        opacity: 0.8
+                    });
+                })
+                .catch(err => console.error("Error loading live heatmap:", err));
+        }
+
+        // Start the process when DOM is ready
+        document.addEventListener('DOMContentLoaded', loadPreviewMapScript);
+    </script>
+    <nav class="mobile-bottom-nav">
+        <div class="nav-items">
+            <a href="{{ url_for('index') }}" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+
+            <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')" class="nav-item">
+                <i class="fas fa-edit"></i>
+                <span>Report</span>
+            </a>
+
+            <a href="{{ url_for('alerts') }}" class="nav-item">
+                <i class="fas fa-bell"></i>
+                <span>Alerts</span>
+            </a>
+
+            <a href="{{ url_for('resource_map') }}" class="nav-item">
+                <i class="fas fa-campground"></i>
+                <span>Camps</span>
+            </a>
+
+            <a href="#" onclick="checkAuth(event, '{{ url_for('safe_route') }}')" class="nav-item">
+                <i class="fas fa-route"></i>
+                <span>Safe Route</span>
+            </a>
+        </div>
+    </nav>
 </body>
+
 </html>
