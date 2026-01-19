@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config['SECRET_KEY'] = 'your_secret_key_here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin@localhost/disaster_management'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:root@localhost/disaster_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configure Flask-Mail

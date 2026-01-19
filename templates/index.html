@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" />
     <!-- AOS Animation Library -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Favicon -->
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon" />
     <style>
@@ -269,104 +271,171 @@
             background: #1d4ed8;
         }
 
-        /* Mobile Alert Banner */
+        /* Mobile Alert Banner - Fixed */
         .mobile-alert-banner {
             display: none;
-            margin: 70px 12px 16px 12px;
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            border-radius: 16px;
-            padding: 20px;
-            border-left: 4px solid #f59e0b;
-            transition: opacity 0.3s ease;
-            min-height: 160px;
+            margin: 70px 16px 16px 16px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            border-top: 4px solid #22c55e;
         }
+        .mobile-alert-banner.alert-high { border-top-color: #dc2626; }
+        .mobile-alert-banner.alert-medium { border-top-color: #f59e0b; }
 
-        .mobile-alert-banner.alert-high {
-            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-            border-left-color: #dc2626;
-        }
+        .mobile-alert-banner * { box-sizing: border-box; }
 
-        .mobile-alert-banner.alert-medium {
-            background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
-            border-left-color: #ea580c;
-        }
-
-        .mobile-alert-banner .alert-header {
+        /* Header */
+        .mobile-alert-banner .severity-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-            gap: 12px;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
         }
 
-        .mobile-alert-banner .alert-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #1e293b;
-            flex: 1;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            line-height: 1.3;
-        }
-
-        .mobile-alert-banner .alert-badge {
-            font-size: 10px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .mobile-alert-banner .alert-badge.low {
-            background: #22c55e;
-            color: white;
-        }
-
-        .mobile-alert-banner .alert-badge.medium {
-            background: #f59e0b;
-            color: white;
-        }
-
-        .mobile-alert-banner .alert-badge.high {
-            background: #dc2626;
-            color: white;
-        }
-
-        .mobile-alert-banner .alert-issuer {
-            font-size: 12px;
-            color: #64748b;
-            margin-bottom: 8px;
-        }
-
-        .mobile-alert-banner .alert-details {
+        .mobile-alert-banner .severity-badge {
             display: flex;
-            gap: 16px;
-            font-size: 12px;
-            color: #475569;
+            align-items: center;
+            gap: 4px;
+            background: #dcfce7;
+            color: #166534;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+        .mobile-alert-banner.alert-high .severity-badge { background: #fee2e2; color: #991b1b; }
+        .mobile-alert-banner.alert-medium .severity-badge { background: #fef3c7; color: #92400e; }
+        .mobile-alert-banner .severity-badge i { font-size: 10px; }
+
+        .mobile-alert-banner .nav-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .mobile-alert-banner .counter {
+            font-size: 11px;
+            color: #64748b;
+            padding: 0 6px;
+        }
+
+        .mobile-alert-banner .nav-btn {
+            width: 26px;
+            height: 26px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            background: #fff;
+            color: #374151;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        /* Body */
+        .mobile-alert-banner .card-body {
+            padding: 12px;
+        }
+
+        .mobile-alert-banner .main-info {
+            display: flex;
+            gap: 12px;
             margin-bottom: 12px;
         }
 
-        .mobile-alert-banner .alert-actions {
-            display: flex;
-            gap: 24px;
-        }
-
-        .mobile-alert-banner .alert-action {
+        .mobile-alert-banner .magnitude-badge {
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            border-radius: 10px;
+            background: #3b82f6;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
-            font-size: 11px;
-            color: #475569;
-            cursor: pointer;
+            justify-content: center;
+        }
+        .mobile-alert-banner.alert-high .magnitude-badge { background: #dc2626; }
+        .mobile-alert-banner.alert-medium .magnitude-badge { background: #f59e0b; }
+
+        .mobile-alert-banner .mag-num { color: #fff; font-size: 16px; font-weight: 700; }
+        .mobile-alert-banner .mag-unit { color: rgba(255,255,255,0.8); font-size: 8px; font-weight: 600; }
+
+        .mobile-alert-banner .event-info {
+            flex: 1;
+            min-width: 0;
+            padding-right: 4px;
         }
 
-        .mobile-alert-banner .alert-action i {
-            font-size: 16px;
+        .mobile-alert-banner .event-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 4px 0;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
+
+        .mobile-alert-banner .event-location {
+            font-size: 12px;
+            color: #6b7280;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mobile-alert-banner .event-location i { color: #ef4444; font-size: 10px; margin-right: 4px; }
+
+        /* Info Grid */
+        .mobile-alert-banner .info-grid {
+            display: flex;
+            gap: 8px;
+            padding: 8px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .mobile-alert-banner .info-item {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
+        .mobile-alert-banner .info-item i { color: #6b7280; font-size: 12px; flex-shrink: 0; }
+        .mobile-alert-banner .info-content { min-width: 0; overflow: hidden; }
+        .mobile-alert-banner .info-label { font-size: 9px; color: #9ca3af; text-transform: uppercase; font-weight: 600; }
+        .mobile-alert-banner .info-value { font-size: 11px; color: #1f2937; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Actions */
+        .mobile-alert-banner .action-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .mobile-alert-banner .action-btn {
+            flex: 1;
+            padding: 10px 8px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #f3f4f6;
+            color: #374151;
+        }
+        .mobile-alert-banner .action-btn.primary { background: #2563eb; color: #fff; }
+        .mobile-alert-banner .action-btn i { font-size: 12px; }
 
         /* Mobile Feature Cards */
         .mobile-feature-cards {
@@ -802,41 +871,66 @@
 
     <!-- MOBILE ALERT BANNER -->
     <div class="mobile-alert-banner" id="mobile-alert-banner">
-        <!-- Title + Badge Row (like alerts page) -->
-        <div class="flex justify-between items-start mb-2">
-            <h3 id="mobile-alert-title" class="font-bold text-gray-800 flex-1 pr-2" style="font-size: 15px;">Loading
-                alerts...</h3>
-            <span id="mobile-alert-badge"
-                class="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">Low</span>
+        <!-- Colored Header -->
+        <div class="severity-header">
+            <div class="severity-badge" id="mobile-alert-badge">
+                <i class="fas fa-shield-alt"></i>
+                <span>LOW RISK</span>
+            </div>
+            <div class="nav-controls">
+                <button class="nav-btn" onclick="prevAlert()"><i class="fas fa-chevron-left"></i></button>
+                <span class="counter" id="mobile-slide-counter">1 of 10</span>
+                <button class="nav-btn" onclick="nextAlert()"><i class="fas fa-chevron-right"></i></button>
+            </div>
         </div>
 
-        <!-- Source Row -->
-        <p class="text-xs text-gray-500 mb-2">
-            <i class="fas fa-satellite-dish mr-1"></i>
-            <span id="mobile-alert-issuer">USGS</span>
-            <span id="mobile-slide-counter" style="color: #94a3b8;">• 1/17</span>
-        </p>
+        <!-- Card Body -->
+        <div class="card-body">
+            <!-- Main Info -->
+            <div class="main-info">
+                <div class="magnitude-badge" id="mobile-alert-magnitude">
+                    <span class="mag-num">0.5</span>
+                    <span class="mag-unit">MAG</span>
+                </div>
+                <div class="event-info">
+                    <h3 class="event-title" id="mobile-alert-title">5km WNW of Cobb, CA</h3>
+                    <p class="event-location" id="mobile-alert-location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>California, United States</span>
+                    </p>
+                </div>
+            </div>
 
-        <!-- Time Row -->
-        <p class="text-xs text-gray-500">
-            <i class="fas fa-clock mr-1"></i>
-            <span id="mobile-alert-time">--</span>
-        </p>
+            <!-- Info Grid -->
+            <div class="info-grid">
+                <div class="info-item">
+                    <i class="fas fa-broadcast-tower"></i>
+                    <div class="info-content">
+                        <div class="info-label">Source</div>
+                        <div class="info-value" id="mobile-alert-issuer">USGS</div>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-clock"></i>
+                    <div class="info-content">
+                        <div class="info-label">Time</div>
+                        <div class="info-value" id="mobile-alert-time">2 min ago</div>
+                    </div>
+                </div>
+            </div>
 
-        <!-- Location Row -->
-        <p class="text-xs text-gray-500 mt-1" id="mobile-alert-location-row">
-            <i class="fas fa-map-marker-alt mr-1"></i>
-            <span id="mobile-alert-location">--</span>
-        </p>
-
-        <!-- Action Icons -->
-        <div class="flex gap-5 mt-3">
-            <i class="fas fa-share-alt text-gray-500 cursor-pointer" style="font-size: 15px;"
-                onclick="shareAlert()"></i>
-            <i class="fas fa-volume-up text-gray-500 cursor-pointer" style="font-size: 15px;"
-                onclick="speakAlert()"></i>
-            <i class="fas fa-info-circle text-gray-500 cursor-pointer" style="font-size: 15px;"
-                onclick="window.location.href='{{ url_for('user_guide') }}'"></i>
+            <!-- Actions -->
+            <div class="action-row">
+                <button class="action-btn" onclick="shareAlert()">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+                <button class="action-btn" onclick="speakAlert()">
+                    <i class="fas fa-volume-up"></i> Listen
+                </button>
+                <button class="action-btn primary" onclick="window.location.href='{{ url_for('alerts') }}'">
+                    <i class="fas fa-bell"></i> All Alerts
+                </button>
+            </div>
         </div>
     </div>
 
@@ -882,12 +976,11 @@
 
     <!-- MOBILE MAP PREVIEW -->
     <div class="mobile-map-preview">
-        <div class="map-container" onclick="checkAuth(event, '{{ url_for('map_view') }}')">
-            <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=600&h=300&fit=crop" alt="Map"
-                style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">
-            <div class="map-overlay">
+        <div class="map-container" onclick="checkAuth(event, '{{ url_for('map_view') }}')" style="position: relative;">
+            <div id="mobile-preview-map" style="width: 100%; height: 100%; border-radius: 16px; z-index: 1;"></div>
+            <div class="map-overlay" style="pointer-events: none;">
                 <div class="map-title"><i class="fas fa-map-marked-alt"></i> Danger Zones Map</div>
-                <div class="map-subtitle">Tap to view full map with alerts</div>
+                <div class="map-subtitle">Tap to view full map</div>
             </div>
         </div>
     </div>
@@ -2087,12 +2180,17 @@
             if (alertSlideInterval) clearInterval(alertSlideInterval);
 
             if (!events || events.length === 0) {
-                document.getElementById('mobile-alert-title').textContent = 'No Active Alerts';
-                document.getElementById('mobile-alert-badge').textContent = 'Safe';
-                document.getElementById('mobile-alert-badge').className = 'alert-badge low';
-                document.getElementById('mobile-alert-issuer').textContent = 'All clear in your area';
-                document.getElementById('mobile-alert-location').innerHTML = '<i class="fas fa-map-marker-alt"></i> --';
-                document.getElementById('mobile-alert-time').innerHTML = '<i class="fas fa-clock"></i> --';
+                const magEl = document.getElementById('mobile-alert-magnitude');
+                magEl.innerHTML = '<span class="mag-num">✓</span><span class="mag-unit">SAFE</span>';
+                document.getElementById('mobile-alert-title').textContent = 'All clear in your area';
+                const badge = document.getElementById('mobile-alert-badge');
+                badge.innerHTML = '<i class="fas fa-shield-alt"></i><span>ALL CLEAR</span>';
+                badge.className = 'severity-badge';
+                document.getElementById('mobile-alert-issuer').textContent = 'System';
+                const locEl = document.getElementById('mobile-alert-location');
+                locEl.innerHTML = '<i class="fas fa-map-marker-alt"></i><span>No hazards detected</span>';
+                document.getElementById('mobile-alert-time').textContent = 'Just now';
+                document.getElementById('mobile-slide-counter').textContent = '0 of 0';
                 document.getElementById('mobile-alert-banner').className = 'mobile-alert-banner';
                 return;
             }
@@ -2123,49 +2221,130 @@
             // Add fade transition
             const banner = document.getElementById('mobile-alert-banner');
             banner.style.opacity = '0';
+            banner.style.transform = 'translateY(5px)';
 
             setTimeout(() => {
-                document.getElementById('mobile-alert-title').textContent = alert.title || 'Alert';
+                // Extract magnitude from title (e.g., "M 2.5 - 10km N of City")
+                let magNum = '--';
+                let magUnit = 'MAG';
+                let titleText = alert.title || 'Alert';
+
+                const magMatch = titleText.match(/M\s*([\d.]+)/i);
+                if (magMatch) {
+                    magNum = magMatch[1];
+                    magUnit = 'MAG';
+                    // Clean up title - remove magnitude prefix for cleaner display
+                    titleText = titleText.replace(/^M\s*[\d.]+\s*[-–]\s*/i, '').trim();
+                } else if (alert.category === 'earthquake' && alert.severity) {
+                    magNum = alert.severity.toFixed(1);
+                    magUnit = 'MAG';
+                } else if (alert.category) {
+                    // For non-earthquake alerts, show category icon
+                    const icons = {
+                        'flood': '🌊',
+                        'severe_storm': '⛈️',
+                        'tornado': '🌪️',
+                        'fire': '🔥'
+                    };
+                    magNum = icons[alert.category] || '⚠️';
+                    magUnit = alert.category.toUpperCase().replace('_', ' ').substring(0, 5);
+                }
+
+                // Update magnitude badge
+                const magEl = document.getElementById('mobile-alert-magnitude');
+                magEl.innerHTML = `<span class="mag-num">${magNum}</span><span class="mag-unit">${magUnit}</span>`;
+
+                document.getElementById('mobile-alert-title').textContent = titleText;
                 document.getElementById('mobile-alert-issuer').textContent = alert.source || 'USGS';
 
-                // Update slide counter if it exists
+                // Update slide counter
                 const slideCounter = document.getElementById('mobile-slide-counter');
                 if (slideCounter) {
-                    slideCounter.textContent = ` • ${index + 1}/${mobileAlerts.length}`;
+                    slideCounter.textContent = `${index + 1} of ${mobileAlerts.length}`;
                 }
 
                 // Set badge based on severity
                 const badge = document.getElementById('mobile-alert-badge');
+                let badgeIcon = 'fa-shield-alt';
+                let badgeText = 'LOW RISK';
 
                 if (severity >= 5) {
-                    badge.textContent = 'High';
-                    badge.className = 'alert-badge high';
-                    badge.style.background = '#fee2e2';
-                    badge.style.color = '#dc2626';
+                    badgeIcon = 'fa-exclamation-triangle';
+                    badgeText = 'HIGH RISK';
+                    badge.className = 'severity-badge';
                     banner.className = 'mobile-alert-banner alert-high';
                 } else if (severity >= 4) {
-                    badge.textContent = 'Severe';
-                    badge.className = 'alert-badge medium';
-                    badge.style.background = '#ffedd5';
-                    badge.style.color = '#ea580c';
+                    badgeIcon = 'fa-exclamation-circle';
+                    badgeText = 'MODERATE';
+                    badge.className = 'severity-badge';
                     banner.className = 'mobile-alert-banner alert-medium';
                 } else {
-                    badge.textContent = 'Low';
-                    badge.className = 'alert-badge low';
-                    badge.style.background = '#dcfce7';
-                    badge.style.color = '#16a34a';
+                    badgeIcon = 'fa-shield-alt';
+                    badgeText = 'LOW RISK';
+                    badge.className = 'severity-badge';
                     banner.className = 'mobile-alert-banner';
                 }
+                badge.innerHTML = `<i class="fas ${badgeIcon}"></i><span>${badgeText}</span>`;
 
-                // Update time and location
-                const time = alert.time ? new Date(alert.time).toLocaleString() : '--';
-                const location = alert.location || alert.area || '--';
+                // Format time nicely
+                let timeText = '--';
+                if (alert.time) {
+                    const date = new Date(alert.time);
+                    const now = new Date();
+                    const diffMs = now - date;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const diffHours = Math.floor(diffMs / 3600000);
 
-                document.getElementById('mobile-alert-time').textContent = time;
-                document.getElementById('mobile-alert-location').textContent = location;
+                    if (diffMins < 60) {
+                        timeText = diffMins <= 1 ? 'Just now' : `${diffMins}m ago`;
+                    } else if (diffHours < 24) {
+                        timeText = `${diffHours}h ago`;
+                    } else {
+                        timeText = date.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    }
+                }
+
+                const location = alert.location || alert.area || 'Unknown location';
+
+                document.getElementById('mobile-alert-time').textContent = timeText;
+
+                // Update location with icon
+                const locEl = document.getElementById('mobile-alert-location');
+                locEl.innerHTML = `<i class="fas fa-map-marker-alt"></i><span>${location}</span>`;
 
                 banner.style.opacity = '1';
-            }, 300);
+                banner.style.transform = 'translateY(0)';
+            }, 150);
+        }
+
+        // Navigation functions for alert slider
+        function prevAlert() {
+            if (!mobileAlerts || mobileAlerts.length <= 1) return;
+            clearInterval(alertSlideInterval);
+            currentAlertIndex = (currentAlertIndex - 1 + mobileAlerts.length) % mobileAlerts.length;
+            showMobileAlert(currentAlertIndex);
+            // Restart auto-cycle
+            alertSlideInterval = setInterval(() => {
+                currentAlertIndex = (currentAlertIndex + 1) % mobileAlerts.length;
+                showMobileAlert(currentAlertIndex);
+            }, 5000);
+        }
+
+        function nextAlert() {
+            if (!mobileAlerts || mobileAlerts.length <= 1) return;
+            clearInterval(alertSlideInterval);
+            currentAlertIndex = (currentAlertIndex + 1) % mobileAlerts.length;
+            showMobileAlert(currentAlertIndex);
+            // Restart auto-cycle
+            alertSlideInterval = setInterval(() => {
+                currentAlertIndex = (currentAlertIndex + 1) % mobileAlerts.length;
+                showMobileAlert(currentAlertIndex);
+            }, 5000);
         }
 
         // Update mobile alert indicators counts
@@ -2224,6 +2403,98 @@
         loadLiveUpdates();
         setInterval(loadLiveUpdates, 10 * 60 * 1000);
 
+    </script>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize Mobile Preview Map
+        let mobilePreviewMap = null;
+
+        function initMobilePreviewMap() {
+            const mapEl = document.getElementById('mobile-preview-map');
+            if (!mapEl || mobilePreviewMap) return;
+
+            // Default center (will update with user location)
+            const defaultLat = 20.5937;
+            const defaultLng = 78.9629;
+
+            mobilePreviewMap = L.map('mobile-preview-map', {
+                zoomControl: false,
+                attributionControl: false,
+                dragging: false,
+                scrollWheelZoom: false,
+                doubleClickZoom: false,
+                touchZoom: false
+            }).setView([defaultLat, defaultLng], 5);
+
+            // Add tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18
+            }).addTo(mobilePreviewMap);
+
+            // Custom danger zone icon
+            const dangerIcon = L.divIcon({
+                className: 'danger-marker',
+                html: '<div style="background:#ef4444;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 8px rgba(239,68,68,0.6);"></div>',
+                iconSize: [12, 12],
+                iconAnchor: [6, 6]
+            });
+
+            // Fetch and display danger zones from alerts
+            fetch('/api/live_updates')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.events && data.events.length > 0) {
+                        data.events.forEach(event => {
+                            if (event.lat && event.lon) {
+                                L.marker([event.lat, event.lon], { icon: dangerIcon })
+                                    .addTo(mobilePreviewMap);
+                            }
+                        });
+
+                        // Center on first event with coordinates
+                        const firstWithCoords = data.events.find(e => e.lat && e.lon);
+                        if (firstWithCoords) {
+                            mobilePreviewMap.setView([firstWithCoords.lat, firstWithCoords.lon], 4);
+                        }
+                    }
+                })
+                .catch(err => console.log('Map data load error:', err));
+
+            // Try to center on user location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        mobilePreviewMap.setView([pos.coords.latitude, pos.coords.longitude], 6);
+                        // Add user location marker
+                        L.circleMarker([pos.coords.latitude, pos.coords.longitude], {
+                            radius: 8,
+                            fillColor: '#3b82f6',
+                            color: '#fff',
+                            weight: 2,
+                            fillOpacity: 1
+                        }).addTo(mobilePreviewMap);
+                    },
+                    () => {},
+                    { timeout: 5000 }
+                );
+            }
+        }
+
+        // Initialize map when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initMobilePreviewMap);
+        } else {
+            initMobilePreviewMap();
+        }
+
+        // Reinitialize on window resize (fixes map display issues)
+        window.addEventListener('resize', () => {
+            if (mobilePreviewMap) {
+                setTimeout(() => mobilePreviewMap.invalidateSize(), 100);
+            }
+        });
     </script>
 </body>
 
