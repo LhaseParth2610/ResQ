@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Store API key (Replace with your actual API key)
-apikey = "AIzaSyC46htxTZ4Tvpkv2Xob8oCKqZubIvsORkM"  # Using the same key from your map template
+apikey = "INSERT YOUR API KEY HERE"  # Using the same key from your map template
 
 def get_coordinates(location_name):
     """Get coordinates for a location name using Google Geocoding API"""
