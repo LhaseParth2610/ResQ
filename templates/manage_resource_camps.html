@@ -290,9 +290,26 @@
         }
 
         function closeModal() {
-            document.getElementById('addCampModal').style.display = 'none';
-            document.getElementById('addCampForm').reset();
+        const modal = document.getElementById('custom-modal');
+        
+        if (modal) {
+            // 1. Fade out
+            modal.style.opacity = '0';
+            
+            // 2. Try to scale down the box (only if it exists)
+            const box = modal.querySelector('.custom-modal-box');
+            if (box) {
+                box.style.transform = 'scale(0.9)';
+            }
+
+            // 3. Hide completely after animation
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        } else {
+            console.error("Error: Could not find modal with id 'custom-modal'");
         }
+    }
 
         async function addCamp(event) {
             event.preventDefault();

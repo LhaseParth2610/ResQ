@@ -389,28 +389,48 @@ def danger_zones():
 def map_view():
     return render_template('map.html')
 
-@app.route('/sos', methods=['POST'])
+# ... inside app.py ...
+
+@app.route('/api/send_sos', methods=['POST'])
 @login_required
 def sos():
-    data = request.get_json()
-    user_location = data.get('location')
-
-    predefined_message = "SOS! Send help immediately. I am in danger at this location."
-
-    user_email = current_user.email
-    msg = Message('SOS Alert', sender="parthlhase49@gmail.com", recipients=["prajwalkumbhar2909@gmail.com"])
-    #prajwalkumbhar2909@gmail.com
-    msg.body = f'{predefined_message} \n\nUser: {current_user.username} ({user_email}) \nLocation: {user_location}'
-
     try:
-        mail.send(msg)
-        flash('SOS alert sent to authorities', 'success')
-        return redirect(url_for('index'))
-    except Exception as e:
-        logger.error(f"SOS email failed to send: {e}")
-        flash("An error occurred while sending the SOS alert.", 'danger')
-        return redirect(url_for('index'))
+        data = request.get_json()
+        
+        # 1. Extract Data
+        lat = data.get('latitude')
+        lng = data.get('longitude')
+        timestamp = data.get('timestamp')
+        
+        # 2. Create Google Maps Link
+        maps_link = f"https://www.google.com/maps?q={lat},{lng}"
+        
+        # 3. Construct Email
+        user_email = current_user.email
+        subject = f"🚨 SOS ALERT: {current_user.username}"
+        
+        body_content = (
+            f"SOS SIGNAL RECEIVED!\n\n"
+            f"User: {current_user.username}\n"
+            f"Email: {user_email}\n"
+            f"Time: {timestamp}\n\n"
+            f"📍 LOCATION COORDINATES:\n"
+            f"Latitude: {lat}\n"
+            f"Longitude: {lng}\n\n"
+            f"🔗 CLICK TO TRACK:\n{maps_link}"
+        )
 
+        # 4. Send Email
+        msg = Message(subject, sender="parthlhase49@gmail.com", recipients=["prajwalkumbhar2909@gmail.com"])
+        msg.body = body_content
+        mail.send(msg)
+
+        return jsonify({"status": "success", "message": "SOS sent successfully"}), 200
+
+    except Exception as e:
+        print(f"SOS Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
 @app.route('/broadcast', methods=['GET', 'POST'])
 @login_required
 @require_authority  # Use custom decorator
@@ -633,6 +653,9 @@ def add_resource_camp():
         
         flash('Could not find location coordinates. Please be more specific.', 'danger')
         return redirect(url_for('authority_dashboard'))
+
+
+
 
 @app.route('/delete_resource_camp/<int:camp_id>', methods=['DELETE'])
 @login_required
