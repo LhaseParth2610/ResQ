@@ -169,6 +169,41 @@
             letter-spacing: 0.5px;
         }
 
+/* --- FULLSCREEN MAP STYLES --- */
+.map-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 10000 !important; /* Above everything */
+    border-radius: 0 !important;
+    margin: 0 !important;
+    background: white; /* Prevent transparent background issues */
+}
+
+/* Expand Button Style */
+.map-expand-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 50; 
+    background: white;
+    color: #1e293b;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s;
+    font-size: 1.2rem;
+}
+.map-expand-btn:hover { transform: scale(1.1); color: #3b82f6; }
+
         .pulse-dot {
             width: 8px; height: 8px; background: #dc2626;
             border-radius: 50%; 
@@ -252,10 +287,7 @@
                 <h1 class="dashboard-title"><i class="fas fa-shield-alt"></i> Authority Dashboard</h1>
                 <p class="dashboard-subtitle">Real-time Disaster Management & Analysis System</p>
             </div>
-            <div style="background: rgba(255,255,255,0.1); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-user-shield"></i>
             </div>
-        </div>
     </header>
 
     <div class="dashboard-container">
@@ -295,22 +327,29 @@
         </div>
 
         <div class="card animate-card delay-2">
-            <div class="card-body" style="padding: 0;">
-                <div style="padding: 20px 25px;">
-                    <h5 class="card-title">
-                        <div class="icon-box icon-red"><i class="fas fa-map-marked-alt"></i></div>
-                        Live Danger Zones
-                    </h5>
-                </div>
-                
-                <div class="map-wrapper">
-                    <div class="map-overlay">
-                        <div class="pulse-dot"></div> LIVE TRACKING
-                    </div>
-                    <div id="map"></div>
-                </div>
-            </div>
+    <div id="map-card-parent" class="card-body" style="padding: 0;">
+        <div style="padding: 20px 25px;">
+            <h5 class="card-title">
+                <div class="icon-box icon-red"><i class="fas fa-map-marked-alt"></i></div>
+                Live Danger Zones
+            </h5>
         </div>
+        
+        <div id="map-placeholder" style="height: 450px; width: 100%; display: none; background: #f1f5f9;"></div>
+
+        <div id="dashboard-map-wrapper" class="map-wrapper">
+            <div class="map-overlay">
+                <div class="pulse-dot"></div> LIVE TRACKING
+            </div>
+            
+            <div id="map"></div>
+
+            <button class="map-expand-btn" onclick="toggleDashboardFullscreen()" title="Toggle Fullscreen">
+                <i id="fullscreen-icon" class="fas fa-expand"></i>
+            </button>
+        </div>
+    </div>
+</div>
 
         <div class="card animate-card delay-3">
             <div class="card-body">
@@ -565,6 +604,50 @@
                 }
             }
         });
+
+
+        let isDashboardFullscreen = false;
+
+function toggleDashboardFullscreen() {
+    const wrapper = document.getElementById('dashboard-map-wrapper');
+    const placeholder = document.getElementById('map-placeholder');
+    const parent = document.getElementById('map-card-parent');
+    const icon = document.getElementById('fullscreen-icon');
+    
+    isDashboardFullscreen = !isDashboardFullscreen;
+
+    if (isDashboardFullscreen) {
+        // 1. Show placeholder to maintain card height
+        placeholder.style.display = 'block';
+        
+        // 2. Move wrapper to BODY to escape the card's overflow/transform constraints
+        document.body.appendChild(wrapper);
+        
+        // 3. Apply fullscreen class
+        wrapper.classList.add('map-fullscreen');
+        icon.className = 'fas fa-compress'; 
+
+    } else {
+        // 1. Move wrapper BACK to the card
+        parent.appendChild(wrapper);
+        
+        // 2. Hide placeholder
+        placeholder.style.display = 'none';
+        
+        // 3. Remove fullscreen class
+        wrapper.classList.remove('map-fullscreen');
+        icon.className = 'fas fa-expand';
+    }
+
+    // Trigger map resize to fix gray areas
+    if (typeof map !== 'undefined') {
+        setTimeout(() => {
+            google.maps.event.trigger(map, "resize");
+            // Optional: Re-center map if needed
+            // map.setCenter(defaultLoc); 
+        }, 100);
+    }
+}
 
         // --- MAP LOGIC ---
         function initMap() {

@@ -313,8 +313,6 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-
-
 @app.route('/report', methods=['GET', 'POST'])
 @login_required
 def report():
@@ -329,10 +327,10 @@ def report():
         if image_file and image_file.filename:
             image_data = image_file.read()
             
-            # Verify the image with the LLM
-            if not is_disaster_image(image_data):
-                error_message = 'The uploaded image does not appear to be a valid disaster-related photo.'
-                return render_template('report.html', image_error=error_message)
+            # # Verify the image with the LLM
+            # if not is_disaster_image(image_data):
+            #     error_message = 'The uploaded image does not appear to be a valid disaster-related photo.'
+            #     return render_template('report.html', image_error=error_message)
             
             image = image_data
 
