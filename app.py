@@ -19,7 +19,8 @@ from dotenv import load_dotenv
 from llm_vision import is_disaster_image
 from usgs_noaa import fetch_usgs_earthquakes, fetch_noaa_alerts
 load_dotenv()
-
+import base64
+import urllib.parse
 # Import models and db instance
 # from models import db, User, Report, DangerZone, BroadcastHistory
 from models import db, User, Report, DangerZone, BroadcastHistory, ResourceCamp 
@@ -392,7 +393,6 @@ def map_view():
 # ... inside app.py ...
 
 @app.route('/api/send_sos', methods=['POST'])
-@login_required
 def sos():
     try:
         data = request.get_json()
@@ -459,8 +459,11 @@ def alerts():
 
 import base64
 
-@app.route('/images/<location>')
+# Change <location> to <path:location> to handle addresses with slashes (e.g. "10/77")
+@app.route('/images/<path:location>') 
 def get_images(location):
+    """Get images for a specific location"""
+    # ... rest of your code is fine ...
     """Get images for a specific location"""
     logger.debug(f"Fetching images for location: {location}")
     

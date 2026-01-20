@@ -1127,9 +1127,9 @@
         </div>
     </div>
 <!-- mobile map preview -->
+    </div>
     <div class="mobile-map-preview">
         <div class="map-card" onclick="window.location.href='{{ url_for('map_view') }}'">
-            
             <div class="map-title-overlay">
                 <span class="map-title-text">
                     <div class="live-dot"></div> Danger Zones
@@ -1977,6 +1977,21 @@
             <button id="ack-close-btn" type="button" class="modal-btn-ok">OK</button>
         </div>
     </div>
+    <div id="image-modal" class="custom-modal-overlay" style="z-index: 2100;">
+        <div class="custom-modal-box" style="padding: 0; background: white;">
+            <div class="img-preview-container" style="width: 100%; height: 200px; background: #000; position: relative; display: flex; align-items: center; justify-content: center;">
+                <img id="modal-disaster-img" src="" alt="Disaster Image" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                <button onclick="closeImageModal()" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-times"></i>
+                </button>
+                <p id="modal-no-img" style="color: white; display: none;">No Image Available</p>
+            </div>
+            <div style="padding: 15px; text-align: left;">
+                <h4 id="modal-loc-title" style="font-weight: 800; color: #1e293b; margin-bottom: 4px;">Location</h4>
+                <p id="modal-desc" style="font-size: 12px; color: #64748b;">Report details loading...</p>
+            </div>
+        </div>
+    </div>
     <!-- SCRIPTS -->
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
@@ -2550,40 +2565,47 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <script>
         let previewMap;
 
-        // 1. Load Google Maps API (Dynamically fetches key like your map.html)
+        // 1. Master Loader Function
         async function loadPreviewMapScript() {
-            try {
-                // Check if Google Maps is already loaded to avoid errors
-                if (typeof google === 'object' && typeof google.maps === 'object') {
-                    initPreviewMap();
-                    return;
-                }
+            // Check if Google Maps API is already loaded via object presence
+            if (typeof google === 'object' && typeof google.maps === 'object') {
+                initPreviewMap(); // API ready, just render
+                return;
+            }
 
+            // Check if script tag is already attached (prevents duplicates on reload)
+            if (document.querySelector('script[src*="maps.googleapis.com"]')) {
+                return; // Script is loading, waiting for callback
+            }
+
+            try {
                 const response = await fetch('/api/maps/key');
                 const data = await response.json();
                 const apiKey = data.api_key;
 
                 const script = document.createElement('script');
-                // visualiztion library is REQUIRED for the heatmap
                 script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=visualization`;
                 script.async = true;
                 script.defer = true;
-                document.head.appendChild(script);
                 
+                // When script finishes loading, render the map
                 script.onload = () => {
                     initPreviewMap();
                 };
+                
+                document.head.appendChild(script);
             } catch (error) {
                 console.error('Error loading Google Maps:', error);
             }
         }
 
-        // 2. Initialize the Map
+        // 2. Initialize Logic
         function initPreviewMap() {
-            // Get User Location first
+            // Always try to get fresh location, fallback to default
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
@@ -2591,169 +2613,235 @@
                     },
                     (error) => {
                         console.log("Location denied, using default");
-                        renderMap(20.5937, 78.9629); // Default fallback
-                    }
+                        renderMap(20.5937, 78.9629); // Default fallback (India)
+                    },
+                    { timeout: 5000, enableHighAccuracy: false } // Fast timeout for mobile
                 );
             } else {
                 renderMap(20.5937, 78.9629);
             }
         }
 
-        // 3. Render Map & Heatmap Data
+        // 3. Render Map
+        // 3. Render Map (Updated with Markers)
         function renderMap(lat, lng) {
             const mapEl = document.getElementById('mobile-preview-map');
             if (!mapEl) return;
 
-            // Create Google Map with CLEANEST possible interface
+            mapEl.innerHTML = ''; // Clear previous map
+
             previewMap = new google.maps.Map(mapEl, {
                 zoom: 12,
                 center: { lat: lat, lng: lng },
-                
-                // Hides all standard buttons (Zoom, Street View, Map Type)
-                disableDefaultUI: true,       
-                
-                // Disables scrolling/panning inside the preview
-                gestureHandling: 'none',      
-                
-                // Removes keyboard shortcuts
-                keyboardShortcuts: false,     
-                
-                // Hides POI labels (businesses, landmarks) for a cleaner background look
-                styles: [                     
-                    { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
-                    { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] }
+                disableDefaultUI: true,
+                gestureHandling: 'cooperative', 
+                styles: [
+                    { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }
                 ]
             });
 
-            
-
-            // 4. Fetch Live Data & Add Heatmap (Just like map.html)
             fetch("/danger_zones")
-                .then(response => response.json())
+                .then(r => r.json())
                 .then(data => {
-                    // Convert data to Google Maps points
-                    const heatmapData = data.map(zone => ({
-                        location: new google.maps.LatLng(zone.latitude, zone.longitude),
-                        weight: zone.report_count
-                    }));
+                    if(!data || data.length === 0) return;
 
-                    // Add Heatmap Layer
-                    const heatmap = new google.maps.visualization.HeatmapLayer({
-                        data: heatmapData,
-                        map: previewMap,
-                        gradient: [
-                            'rgba(0, 255, 0, 0)',
-                            'rgba(0, 255, 0, 0.5)',
-                            'rgba(255, 255, 0, 0.7)',
-                            'rgba(255, 165, 0, 0.8)',
-                            'rgba(255, 0, 0, 1)'
-                        ],
-                        radius: 35,
-                        opacity: 0.8
+                    const heatmapData = [];
+
+                    data.forEach(zone => {
+                        const loc = new google.maps.LatLng(zone.latitude, zone.longitude);
+                        
+                        // 1. Add to Heatmap Data
+                        heatmapData.push({ location: loc, weight: zone.report_count });
+
+                        // 2. Add Red Marker (This was missing)
+                        const marker = new google.maps.Marker({
+                            position: loc,
+                            map: previewMap,
+                            title: zone.location,
+                            icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                scale: 6,
+                                fillColor: "#dc2626",
+                                fillOpacity: 1,
+                                strokeColor: "white",
+                                strokeWeight: 2
+                            }
+                        });
+
+        
+                    });
+
+                    // Render Heatmap
+                    new google.maps.visualization.HeatmapLayer({
+                        data: heatmapData, map: previewMap, radius: 35, opacity: 0.6,
+                        gradient: ['rgba(0, 255, 0, 0)', 'rgba(255, 0, 0, 1)']
                     });
                 })
-                .catch(err => console.error("Error loading live heatmap:", err));
+                .catch(e => console.error("Map Data Error:", e));
         }
 
-        // Start the process when DOM is ready
-        
-    document.addEventListener('DOMContentLoaded', loadPreviewMapScript);
+        // --- IMAGE MODAL LOGIC ---
+        function openImageModal(zone) {
+            const modal = document.getElementById('image-modal');
+            const imgEl = document.getElementById('modal-disaster-img');
+            const noImgEl = document.getElementById('modal-no-img');
+            const titleEl = document.getElementById('modal-loc-title');
+            const descEl = document.getElementById('modal-desc');
+
+            // Set Text Details
+            titleEl.innerText = zone.location || "Unknown Location";
+            descEl.innerText = `Reports: ${zone.report_count} | Status: Active`;
+
+            // Reset UI
+            imgEl.style.display = 'none';
+            noImgEl.style.display = 'block';
+            noImgEl.innerText = "Loading image...";
+
+            // Fetch Image from Server
+            fetch(`/images/${encodeURIComponent(zone.location)}`)
+                .then(res => {
+                    if(!res.ok) throw new Error("No image found");
+                    return res.json();
+                })
+                .then(images => {
+                    if(images && images.length > 0) {
+                        // Display the first image found
+                        imgEl.src = `data:image/jpeg;base64,${images[0]}`; 
+                        imgEl.style.display = 'block';
+                        noImgEl.style.display = 'none';
+                    } else {
+                        noImgEl.innerText = "No image uploaded.";
+                    }
+                })
+                .catch(err => {
+                    console.log("Image fetch error:", err);
+                    noImgEl.innerText = "No image available.";
+                });
+
+            // Show Modal
+            modal.style.display = 'flex';
+            setTimeout(() => { modal.style.opacity = '1'; }, 10);
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('image-modal');
+            modal.style.opacity = '0';
+            setTimeout(() => { modal.style.display = 'none'; }, 300);
+        }
+
+
+            // 4. Fetch Live Data & Add Heatmap
+
+        // --- LIFECYCLE EVENTS (THE FIX) ---
+
+        // 1. Standard Load
+        document.addEventListener('DOMContentLoaded', loadPreviewMapScript);
+
+        // 2. Handle "Back Button" / Cache Restore on Mobile (bfcache)
+        window.addEventListener('pageshow', function(event) {
+            // If the page was restored from bfcache (persisted) OR if we just need to ensure the map is there
+            // We verify if Google Maps API is loaded before trying to init
+            if (event.persisted || (typeof google === 'object' && typeof google.maps === 'object')) {
+                // Force a re-init after a tiny delay to ensure the container DOM is ready
+                setTimeout(initPreviewMap, 100);
+            }
+        });
 
         // --- SOS Button Logic ---
-    function triggerSOS() {
-        const btn = document.getElementById('sos-btn');
-        const text = document.getElementById('sos-text');
-        const modal = document.getElementById('custom-modal');
+        function triggerSOS() {
+            const btn = document.getElementById('sos-btn');
+            const text = document.getElementById('sos-text');
+            const modal = document.getElementById('custom-modal');
 
-        // 1. UI Feedback (Immediate)
-        btn.disabled = true;
-        btn.style.background = "linear-gradient(135deg, #059669 0%, #10b981 100%)";
-        text.innerText = "Sending...";
-        
-        // 2. Get Real Location
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const data = {
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude,
-                        timestamp: new Date().toISOString()
-                    };
+            // 1. UI Feedback (Immediate)
+            btn.disabled = true;
+            btn.style.background = "linear-gradient(135deg, #059669 0%, #10b981 100%)";
+            text.innerText = "Sending...";
+            
+            // 2. Get Real Location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const data = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            timestamp: new Date().toISOString()
+                        };
 
-                    // 3. Send Data to Python Backend
-                    fetch('/api/send_sos', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(data)
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        // Success! Now show the "Acknowledged" Modal
-                        text.innerText = "Signal Sent!";
-                        const pulse = btn.querySelector('.pulse-icon');
-                        if(pulse) pulse.classList.remove('pulse-icon');
+                        // 3. Send Data to Python Backend
+                        fetch('/api/send_sos', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(data)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            // Success! Now show the "Acknowledged" Modal
+                            text.innerText = "Signal Sent!";
+                            const pulse = btn.querySelector('.pulse-icon');
+                            if(pulse) pulse.classList.remove('pulse-icon');
 
-                        setTimeout(() => {
-                            modal.style.display = 'flex';
-                            setTimeout(() => { modal.style.opacity = '1'; document.querySelector('.custom-modal-box').style.transform = 'scale(1)'; }, 10);
-                        }, 300);
-                    })
-                    .catch((error) => {
-                        console.error('Error:', error);
-                        alert("Connection Failed! Call 112 directly.");
+                            setTimeout(() => {
+                                modal.style.display = 'flex';
+                                setTimeout(() => { modal.style.opacity = '1'; document.querySelector('.custom-modal-box').style.transform = 'scale(1)'; }, 10);
+                            }, 300);
+                        })
+                        .catch((error) => {
+                            console.error('Error:', error);
+                            alert("Connection Failed! Call 112 directly.");
+                            resetSOSButton();
+                        });
+                    },
+                    (error) => {
+                        alert("Location access denied. Cannot send SOS location.");
                         resetSOSButton();
-                    });
-                },
-                (error) => {
-                    alert("Location access denied. Cannot send SOS location.");
-                    resetSOSButton();
-                }
-            );
-        } else {
-            alert("Geolocation is not supported by this browser.");
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+
+            // Auto-reset after 30s
+            setTimeout(resetSOSButton, 30000);
         }
 
-        // Auto-reset after 30s
-        setTimeout(resetSOSButton, 30000);
-    }
-
-    function resetSOSButton() {
-        const btn = document.getElementById('sos-btn');
-        const text = document.getElementById('sos-text');
-        btn.disabled = false;
-        btn.style.background = "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)";
-        btn.style.boxShadow = "0 10px 25px rgba(220, 38, 38, 0.4)";
-        text.innerText = "SOS Call";
-    }
-
-    // --- FORCE FIX FOR OK BUTTON ---
-    document.addEventListener('DOMContentLoaded', function() {
-        // 1. Find the button by ID
-        const closeBtn = document.getElementById('ack-close-btn');
-        
-        // 2. Attach the click event manually
-        if (closeBtn) {
-            closeBtn.addEventListener('click', function() {
-                const modal = document.getElementById('custom-modal');
-                const box = modal.querySelector('.custom-modal-box');
-                
-                // Animation: Fade out
-                if(modal) modal.style.opacity = '0';
-                if(box) box.style.transform = 'scale(0.9)';
-                
-                // Hide after animation (300ms)
-                setTimeout(() => {
-                    if(modal) modal.style.display = 'none';
-                }, 300);
-            });
-            console.log("✅ OK Button Listener Attached Successfully");
-        } else {
-            console.error("❌ Error: Could not find button with id 'ack-close-btn'");
+        function resetSOSButton() {
+            const btn = document.getElementById('sos-btn');
+            const text = document.getElementById('sos-text');
+            if (btn) {
+                btn.disabled = false;
+                btn.style.background = "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)";
+                btn.style.boxShadow = "0 10px 25px rgba(220, 38, 38, 0.4)";
+                const icon = btn.querySelector('i'); // Re-add pulse icon class if needed
+                text.innerText = "SOS Call";
+            }
         }
-    });
 
+        // --- FORCE FIX FOR OK BUTTON ---
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Find the button by ID
+            const closeBtn = document.getElementById('ack-close-btn');
+            
+            // 2. Attach the click event manually
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    const modal = document.getElementById('custom-modal');
+                    const box = modal.querySelector('.custom-modal-box');
+                    
+                    // Animation: Fade out
+                    if(modal) modal.style.opacity = '0';
+                    if(box) box.style.transform = 'scale(0.9)';
+                    
+                    // Hide after animation (300ms)
+                    setTimeout(() => {
+                        if(modal) modal.style.display = 'none';
+                    }, 300);
+                });
+                console.log("✅ OK Button Listener Attached Successfully");
+            }
+        });
     </script>
     <nav class="mobile-bottom-nav">
         <div class="nav-items">
