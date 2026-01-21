@@ -21,11 +21,14 @@ from usgs_noaa import fetch_usgs_earthquakes, fetch_noaa_alerts
 load_dotenv()
 import base64
 import urllib.parse
+import numpy as np
+from sklearn.cluster import DBSCAN
+from scipy.spatial import ConvexHull
 # Import models and db instance
 # from models import db, User, Report, DangerZone, BroadcastHistory
 from models import db, User, Report, DangerZone, BroadcastHistory, ResourceCamp 
 # Load environment variables at the top of app.py
-
+import math
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -450,6 +453,108 @@ def broadcast():
 @app.route('/safe_route')
 def safe_route():
     return render_template('safe_route.html')
+# --- HELPER FUNCTION FOR CIRCLES ---
+def create_circular_polygon(center_lat, center_lng, radius_km, num_points=32):
+    """
+    Generates a list of lat/lng dictionaries representing a circle.
+    """
+    coords = []
+    earth_radius = 6371.0  # km
+
+    # Convert lat/lng to radians
+    lat_rad = math.radians(center_lat)
+    lon_rad = math.radians(center_lng)
+
+    for i in range(num_points):
+        # Calculate the angle for this vertex (0 to 360 degrees)
+        angle = math.pi * 2 * i / num_points
+        
+        # Calculate the offset in radians
+        d_lat = (radius_km / earth_radius) * math.cos(angle)
+        d_lon = (radius_km / earth_radius) * math.sin(angle) / math.cos(lat_rad)
+
+        # Convert back to degrees and add to list
+        vertex_lat = math.degrees(lat_rad + d_lat)
+        vertex_lng = math.degrees(lon_rad + d_lon)
+        
+        coords.append({"lat": vertex_lat, "lng": vertex_lng})
+
+    # Close the polygon loop (last point = first point)
+    coords.append(coords[0])
+    
+    return coords
+
+# --- NEW POLYGON API ROUTE ---
+@app.route('/api/danger_polygons')
+def get_danger_polygons():
+    zones = DangerZone.query.all()
+    if not zones:
+        return jsonify([])
+
+    # 1. Prepare Data
+    points = np.array([[z.latitude, z.longitude] for z in zones])
+    zone_refs = {i: z for i, z in enumerate(zones)}
+    
+    if len(points) == 0:
+        return jsonify([])
+
+    # 2. Cluster Points (DBSCAN)
+    # eps=0.015 is approx 1.5km. min_samples=1 means every point counts.
+    clustering = DBSCAN(eps=0.015, min_samples=1).fit(points)
+    labels = clustering.labels_
+    
+    features = []
+    
+    unique_labels = set(labels)
+    for label in unique_labels:
+        if label == -1: continue 
+
+        indices = np.where(labels == label)[0]
+        cluster_points = points[indices]
+        
+        # --- CASE A: CLUSTER (3+ Points) -> Draw Hull ---
+        if len(cluster_points) >= 3:
+            hull = ConvexHull(cluster_points)
+            hull_points = cluster_points[hull.vertices]
+            polygon_coords = list(hull_points)
+            polygon_coords.append(hull_points[0]) # Close loop
+            
+            features.append({
+                "type": "polygon",
+                "coords": [{"lat": p[0], "lng": p[1]} for p in polygon_coords]
+            })
+        
+        # --- CASE B: SINGLE/FEW POINTS -> Draw Circle ---
+        else:
+            for idx in indices:
+                zone = zone_refs[idx]
+                
+                # Fetch latest report to find disaster type
+                latest_report = Report.query.filter_by(location=zone.location)\
+                                .order_by(Report.created_at.desc()).first()
+                disaster_type = latest_report.disaster_type if latest_report else "Unknown"
+                
+                # Dynamic Radius Logic
+                radius_km = 0.5 # Default 500m
+                if disaster_type == "Fire":
+                    radius_km = 0.3 # 300m
+                elif disaster_type in ["Flood", "Earthquake"]:
+                    radius_km = 1.0 # 1km
+                
+                # Generate Circular Polygon
+                circle_shape = create_circular_polygon(
+                    zone.latitude, 
+                    zone.longitude, 
+                    radius_km
+                )
+                
+                features.append({
+                    "type": "polygon",
+                    "coords": circle_shape,
+                    "disaster_type": disaster_type
+                })
+
+    return jsonify(features)
 
 @app.route('/alerts')
 def alerts():

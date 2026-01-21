@@ -6,287 +6,461 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Safe Route Finder</title>
 
-  <!-- Fonts & Tailwind -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
   <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+
+    /* --- LAYOUT --- */
     #map {
-      height: 85vh;
+      height: 60vh;
       width: 100%;
-      border-radius: 8px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(0,0,0,0.05);
+      transition: height 0.3s ease;
     }
 
-    #directions-panel {
-      height: 85vh;
-      overflow-y: auto;
-      padding: 15px;
-      background: white;
-      border-radius: 8px;
+    /* Fullscreen Mode Class */
+    .map-fullscreen #map {
+        height: 100vh !important;
+        width: 100vw !important;
+        border-radius: 0 !important;
+    }
+    
+    .map-fullscreen {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 2000 !important; /* Above everything */
+        background: white;
     }
 
+    /* Floating Expand Button */
+    .map-expand-btn {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        z-index: 10;
+        background: white;
+        color: #475569;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid #e2e8f0;
+    }
+    .map-expand-btn:hover { background: #f8fafc; color: #3b82f6; transform: translateY(-1px); }
+    .map-expand-btn:active { transform: scale(0.95); }
+
+    /* --- CONTROLS CONTAINER --- */
     .controls-container {
       background: white;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 15px;
+      padding: 24px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+      border: 1px solid #f1f5f9;
     }
 
-    .error-message {
-      background: #FEE2E2;
-      color: #DC2626;
-      padding: 1rem;
-      border-radius: 8px;
-      display: none;
+    /* --- CUSTOM INPUTS --- */
+    .input-group {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      color: #94a3b8;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .custom-input {
+      width: 100%;
+      padding: 12px 16px 12px 44px; /* Space for icon */
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      font-weight: 500;
+      color: #334155;
+      transition: all 0.2s;
+    }
+    .custom-input:focus {
+      background-color: white;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      outline: none;
     }
 
-    .success-message {
-      background: #D1FAE5;
-      color: #059669;
-      padding: 1rem;
-      border-radius: 8px;
-      display: none;
+    /* --- GOOGLE DIRECTIONS PANEL OVERRIDES --- */
+    #directions-panel {
+      height: 60vh;
+      overflow-y: auto;
+      padding: 0;
+      background: transparent;
     }
+
+    .adp { font-family: 'Plus Jakarta Sans', sans-serif !important; background: transparent !important; }
+    .adp-list { border: none !important; background: transparent !important; }
+    
+    .adp-listitem {
+        background: white !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+        margin-bottom: 10px !important;
+        padding: 15px !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.02) !important;
+        transition: transform 0.2s, box-shadow 0.2s !important;
+    }
+    .adp-listitem:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.05) !important;
+        border-color: #3b82f6 !important;
+        background-color: #eff6ff !important;
+    }
+
+    .adp-listitem.adp-sel {
+        background-color: #eff6ff !important;
+        border-color: #3b82f6 !important;
+        border-width: 2px !important;
+    }
+
+    .adp-summary { font-size: 1.1rem !important; font-weight: 700 !important; color: #1e293b !important; }
+    .adp-step, .adp-substep { padding: 12px !important; border-bottom: 1px solid #f1f5f9 !important; color: #475569 !important; background: white !important; }
+    .adp-step:last-child { border-bottom: none !important; }
+    .adp-marker { display: none !important; } 
+
+    #directions-panel::-webkit-scrollbar { width: 6px; }
+    #directions-panel::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+
+    /* --- ALERTS --- */
+    .alert-box {
+      padding: 16px; border-radius: 12px; margin-bottom: 15px; display: none; font-weight: 600; font-size: 0.95rem;
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .error-message { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .success-message { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+
+    /* Mobile Bottom Navigation */
+    @media (max-width: 768px) {
+      body { padding-bottom: 100px; }
+      #map, #directions-panel { height: 50vh; }
+      .controls-container { padding: 20px; }
+    }
+
+    .mobile-bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: white; box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+      z-index: 1000; padding: 12px 0;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      border-top: 1px solid #f1f5f9;
+    }
+    .mobile-bottom-nav .nav-items { display: flex; justify-content: space-around; }
+    .mobile-bottom-nav .nav-item {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 8px 12px; color: #94a3b8; text-decoration: none;
+      font-size: 11px; font-weight: 600; border-radius: 12px;
+      transition: all 0.2s;
+    }
+    .mobile-bottom-nav .nav-item:hover, .mobile-bottom-nav .nav-item.active {
+      color: #3b82f6; background: #eff6ff;
+    }
+    .mobile-bottom-nav .nav-item i { font-size: 20px; margin-bottom: 4px; }
   </style>
 </head>
 
-<body class="bg-gray-100 min-h-screen">
-  <div class="bg-white border-b border-gray-200 px-4 py-3 shadow-sm sticky top-0 z-50">
-      <a href="{{ url_for('index') }}" class="inline-flex items-center text-gray-600 hover:text-blue-600 transition">
-          <i class="fas fa-arrow-left mr-2"></i>
-          <span class="font-medium">Back to Home</span>
+<body class="bg-gray-50 min-h-screen">
+  
+  <div class="bg-white border-b border-gray-100 px-6 py-4 shadow-sm sticky top-0 z-50">
+      <a href="{{ url_for('index') }}" class="inline-flex items-center text-gray-500 hover:text-blue-600 transition font-bold text-sm">
+          <i class="fas fa-arrow-left mr-2"></i> Back to Home
       </a>
   </div>
-  <div class="container mx-auto px-4 py-6">
+
+  <div class="container mx-auto px-4 py-8 max-w-6xl">
+    
     <div class="controls-container">
-      <h2 class="text-2xl font-bold mb-4">Safe Route Finder</h2>
-
-      <div id="errorMessage" class="error-message"></div>
-      <div id="successMessage" class="success-message"></div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div class="flex items-center justify-between mb-6">
         <div>
-          <label class="block text-sm font-medium mb-2">Starting Point</label>
-          <div class="flex space-x-2">
-            <input id="start" class="flex-1 p-2 border rounded" placeholder="Enter starting point">
-            <button onclick="useCurrentLocation()" class="bg-blue-500 text-white px-4 py-2 rounded">📍 Current</button>
+            <h2 class="text-2xl font-extrabold text-gray-800">Safe Route Finder</h2>
+            <p class="text-sm text-gray-500 mt-1">Navigate avoiding high-risk zones.</p>
+        </div>
+        <div class="bg-blue-50 text-blue-600 p-3 rounded-full">
+            <i class="fas fa-shield-alt text-xl"></i>
+        </div>
+      </div>
+
+      <div id="errorMessage" class="alert-box error-message"></div>
+      <div id="successMessage" class="alert-box success-message"></div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Starting Point</label>
+          <div class="flex gap-3">
+            <div class="input-group flex-1 min-w-0">
+                <i class="fas fa-location-dot input-icon text-blue-500"></i>
+                <input id="start" class="custom-input" placeholder="Enter start location">
+            </div>
+            <button onclick="useCurrentLocation()" class="flex-shrink-0 bg-white border border-gray-200 text-gray-600 hover:text-blue-600 hover:border-blue-200 px-4 py-2 rounded-xl shadow-sm transition flex items-center justify-center font-bold text-sm">
+                <i class="fas fa-crosshairs mr-2"></i> Current
+            </button>
           </div>
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-2">Destination</label>
-          <input id="destination" class="w-full p-2 border rounded" placeholder="Enter destination">
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Destination</label>
+          <div class="input-group">
+              <i class="fas fa-flag-checkered input-icon text-green-500"></i>
+              <input id="destination" class="custom-input" placeholder="Where do you want to go?">
+          </div>
         </div>
       </div>
 
-      <div class="flex justify-between items-center">
-        <button onclick="calculateSafeRoute()" class="bg-green-500 text-white px-6 py-2 rounded">
-          Find Safe Route
-        </button>
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-gray-100 pt-6">
+        <div class="w-full sm:w-auto">
+            <div class="relative w-full sm:w-48">
+                <i class="fas fa-car absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 z-10"></i>
+                <select id="travelMode" class="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl appearance-none font-bold text-gray-600 focus:ring-2 focus:ring-blue-500 outline-none text-sm cursor-pointer hover:bg-white transition">
+                  <option value="DRIVING">Driving</option>
+                  <option value="WALKING">Walking</option>
+                  <option value="BICYCLING">Bicycling</option>
+                </select>
+                <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </div>
+            </div>
+        </div>
 
-        <select id="travelMode" class="p-2 border rounded text-sm">
-          <option value="DRIVING">🚗 Driving</option>
-          <option value="WALKING">🚶 Walking</option>
-          <option value="BICYCLING">🚲 Bicycling</option>
-        </select>
+        <button onclick="calculateSafeRoute()" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg shadow-blue-200 transform active:scale-95 transition flex items-center justify-center">
+          <i class="fas fa-search-location mr-2"></i> Find Safe Route
+        </button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div class="lg:col-span-2">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <div id="map-wrapper" class="lg:col-span-2 relative">
         <div id="map"></div>
+        
+        <button class="map-expand-btn" onclick="toggleMapFullscreen()" title="Toggle Fullscreen">
+            <i id="fullscreen-icon" class="fas fa-expand text-lg"></i>
+        </button>
+
+        <div class="mt-2 flex items-center gap-2 text-xs text-gray-500 font-medium px-1">
+            <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+            Live Danger Zones (1km Radius)
+        </div>
       </div>
+      
       <div>
-        <div id="directions-panel"></div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-2">
+            <h3 class="font-bold text-gray-800"><i class="fas fa-signs-post text-blue-500 mr-2"></i>Suggested Routes</h3>
+        </div>
+        <div id="directions-panel" class="custom-scrollbar">
+            <div class="flex flex-col items-center justify-center h-full text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">
+                <div class="bg-gray-50 p-4 rounded-full mb-3">
+                    <i class="fas fa-map text-3xl text-gray-300"></i>
+                </div>
+                <p class="text-sm font-medium">Enter locations to view routes</p>
+            </div>
+        </div>
       </div>
     </div>
   </div>
 
+  <nav class="mobile-bottom-nav">
+        <div class="nav-items">
+            <a href="{{ url_for('index') }}" class="nav-item">
+                <i class="fas fa-home"></i> <span>Home</span>
+            </a>
+            <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')" class="nav-item">
+                <i class="fas fa-edit"></i> <span>Report</span>
+            </a>
+            <a href="{{ url_for('alerts') }}" class="nav-item">
+                <i class="fas fa-bell"></i> <span>Alerts</span>
+            </a>
+            <a href="{{ url_for('resource_map') }}" class="nav-item">
+                <i class="fas fa-campground"></i> <span>Camps</span>
+            </a>
+            <a href="#" onclick="checkAuth(event, '{{ url_for('safe_route') }}')" class="nav-item active">
+                <i class="fas fa-route"></i> <span>Safe Route</span>
+            </a>
+        </div>
+    </nav>
+
   <script>
-    /* ---------------- GOOGLE MAPS LOADER ---------------- */
+    const DANGER_RADIUS_METERS = 1000; 
+
     async function loadGoogleMaps() {
-      const res = await fetch('/api/maps/key');
-      const data = await res.json();
+      try {
+          const res = await fetch('/api/maps/key');
+          const data = await res.json();
+          if (!data.api_key) { console.error("API Key Missing"); return; }
 
-      if (!data.api_key) {
-        alert("Google Maps API key missing");
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${data.api_key}&libraries=places,geometry&callback=initMap`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${data.api_key}&libraries=places,geometry,visualization&callback=initMap`;
+          script.async = true;
+          script.defer = true;
+          document.head.appendChild(script);
+      } catch (e) { console.error("Error:", e); }
     }
     loadGoogleMaps();
 
-    /* ---------------- MAP LOGIC ---------------- */
-    let map, directionsService, directionsRenderer;
-    let dangerZonePolygons = [];
-    let startAutocomplete, destAutocomplete;
+    let map, directionsService, directionsRenderer, dangerZonesData = [], heatmapLayer;
+    let isFullscreen = false;
 
     function showError(msg) {
       const el = document.getElementById("errorMessage");
-      el.innerText = msg;
+      el.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i> ${msg}`;
       el.style.display = "block";
-      setTimeout(() => el.style.display = "none", 4000);
+      document.getElementById("successMessage").style.display = "none";
+      setTimeout(() => el.style.display = "none", 5000);
     }
 
     function showSuccess(msg) {
       const el = document.getElementById("successMessage");
-      el.innerText = msg;
+      el.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ${msg}`;
       el.style.display = "block";
-      setTimeout(() => el.style.display = "none", 4000);
+      document.getElementById("errorMessage").style.display = "none";
+      setTimeout(() => el.style.display = "none", 5000);
     }
 
     function initMap() {
       map = new google.maps.Map(document.getElementById("map"), {
         zoom: 13,
-        center: { lat: 18.528756, lng: 73.864157 }
+        center: { lat: 18.528756, lng: 73.864157 },
+        mapTypeControl: false,
+        fullscreenControl: false,
+        streetViewControl: false,
+        styles: [ { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] } ]
       });
+      
+      // Double-click to toggle fullscreen (optional shortcut)
+      map.addListener('dblclick', toggleMapFullscreen);
 
       directionsService = new google.maps.DirectionsService();
       directionsRenderer = new google.maps.DirectionsRenderer({
         map,
-        panel: document.getElementById("directions-panel")
+        panel: document.getElementById("directions-panel"),
+        suppressMarkers: false,
+        polylineOptions: { strokeColor: "#3b82f6", strokeWeight: 6, strokeOpacity: 0.8 }
       });
 
-      startAutocomplete = new google.maps.places.Autocomplete(document.getElementById("start"));
-      destAutocomplete = new google.maps.places.Autocomplete(document.getElementById("destination"));
+      const startInput = document.getElementById("start");
+      const destInput = document.getElementById("destination");
+      if(startInput && destInput) {
+          new google.maps.places.Autocomplete(startInput);
+          new google.maps.places.Autocomplete(destInput);
+      }
 
       fetchDangerZones();
-      showSuccess("Map loaded successfully");
     }
 
-    /* ---------------- DANGER ZONES ---------------- */
     function fetchDangerZones() {
-      fetch("/danger_zones")
-        .then(res => res.json())
-        .then(zones => {
-          zones.forEach(z => {
-            const circle = new google.maps.Circle({
-              center: { lat: z.latitude, lng: z.longitude },
-              radius: 300,
-              fillColor: "#FF0000",
-              fillOpacity: 0.35,
-              strokeColor: "#FF0000",
-              map
-            });
-            dangerZonePolygons.push(circle);
+      fetch("/danger_zones").then(r => r.json()).then(zones => {
+          dangerZonesData = zones; 
+          const heatmapPoints = zones.map(z => ({ location: new google.maps.LatLng(z.latitude, z.longitude), weight: z.report_count || 1 }));
+          if (heatmapLayer) heatmapLayer.setMap(null);
+          heatmapLayer = new google.maps.visualization.HeatmapLayer({
+            data: heatmapPoints, map: map, radius: 40, opacity: 0.6,
+            gradient: ['rgba(0, 255, 255, 0)', 'rgba(0, 255, 255, 1)', 'rgba(0, 191, 255, 1)', 'rgba(0, 127, 255, 1)', 'rgba(0, 63, 255, 1)', 'rgba(0, 0, 255, 1)', 'rgba(0, 0, 223, 1)', 'rgba(0, 0, 191, 1)', 'rgba(0, 0, 159, 1)', 'rgba(0, 0, 127, 1)', 'rgba(63, 0, 91, 1)', 'rgba(127, 0, 63, 1)', 'rgba(191, 0, 31, 1)', 'rgba(255, 0, 0, 1)'] 
           });
-        });
+      });
     }
 
-    /* ---------------- LOCATION ---------------- */
+    function toggleMapFullscreen() {
+        const wrapper = document.getElementById('map-wrapper');
+        const icon = document.getElementById('fullscreen-icon');
+        isFullscreen = !isFullscreen;
+
+        if (isFullscreen) {
+            wrapper.classList.add('map-fullscreen');
+            icon.className = 'fas fa-compress text-lg';
+        } else {
+            wrapper.classList.remove('map-fullscreen');
+            icon.className = 'fas fa-expand text-lg';
+        }
+        setTimeout(() => { google.maps.event.trigger(map, "resize"); }, 300);
+    }
+
     function useCurrentLocation() {
-      navigator.geolocation.getCurrentPosition(pos => {
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        map.setCenter(loc);
-        document.getElementById("start").value = `${loc.lat}, ${loc.lng}`;
-      }, () => showError("Geolocation failed"));
+      if (navigator.geolocation) {
+        const btn = document.querySelector('button[onclick="useCurrentLocation()"]');
+        const oldContent = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin text-blue-500"></i>';
+        
+        navigator.geolocation.getCurrentPosition(pos => {
+          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          map.setCenter(loc); map.setZoom(15);
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ location: loc }, (results, status) => {
+              if (status === "OK" && results[0]) document.getElementById("start").value = results[0].formatted_address;
+              else document.getElementById("start").value = `${loc.lat}, ${loc.lng}`;
+              btn.innerHTML = oldContent;
+          });
+        }, () => { showError("Location access denied."); btn.innerHTML = oldContent; });
+      } else { showError("Geolocation not supported."); }
     }
 
-    /* ---------------- ROUTING ---------------- */
     async function calculateSafeRoute() {
       const start = document.getElementById("start").value;
       const dest = document.getElementById("destination").value;
-      if (!start || !dest) return showError("Enter both locations");
+      if (!start || !dest) return showError("Please enter both locations.");
+
+      const btn = document.querySelector('button[onclick="calculateSafeRoute()"]');
+      const oldText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Finding Route...';
+      btn.disabled = true;
 
       directionsService.route({
         origin: start,
         destination: dest,
-        travelMode: google.maps.TravelMode[
-          document.getElementById("travelMode").value
-        ],
+        travelMode: google.maps.TravelMode[document.getElementById("travelMode").value],
         provideRouteAlternatives: true
       }, (res, status) => {
-        if (status !== "OK") return showError("Route failed");
+        btn.innerHTML = oldText;
+        btn.disabled = false;
+
+        if (status !== "OK") return showError("No route found.");
+
+        let bestRouteIndex = -1;
+        let minDangerScore = Infinity;
+
+        res.routes.forEach((route, index) => {
+          let dangerScore = 0;
+          route.overview_path.forEach(point => {
+            for(let zone of dangerZonesData) {
+              const zoneCenter = new google.maps.LatLng(zone.latitude, zone.longitude);
+              if (google.maps.geometry.spherical.computeDistanceBetween(point, zoneCenter) < DANGER_RADIUS_METERS) { 
+                dangerScore += 1; 
+              }
+            }
+          });
+          if (dangerScore < minDangerScore) { minDangerScore = dangerScore; bestRouteIndex = index; }
+        });
+
+        if (minDangerScore > 0) showError("Caution: Safest route still passes near danger areas.");
+        else showSuccess("Safest route found!");
+
         directionsRenderer.setDirections(res);
-        showSuccess("Route calculated");
+        directionsRenderer.setRouteIndex(bestRouteIndex);
       });
     }
+    
+    function checkAuth(e, url) { e.preventDefault(); window.location.href = url; }
   </script>
-
-  <!-- Mobile Bottom Navigation -->
-  <style>
-    @media (max-width: 768px) {
-      body {
-        padding-bottom: 80px;
-      }
-    }
-
-    .mobile-bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: white;
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-      z-index: 1000;
-      padding: 8px 0;
-      padding-bottom: calc(8px + env(safe-area-inset-bottom));
-    }
-
-    .mobile-bottom-nav .nav-items {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-    }
-
-    .mobile-bottom-nav .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 8px 12px;
-      color: #64748b;
-      text-decoration: none;
-      font-size: 11px;
-      font-weight: 500;
-      border-radius: 8px;
-    }
-
-    .mobile-bottom-nav .nav-item:hover,
-    .mobile-bottom-nav .nav-item.active {
-      color: #2563eb;
-      background: #eff6ff;
-    }
-
-    .mobile-bottom-nav .nav-item i {
-      font-size: 20px;
-      margin-bottom: 4px;
-    }
-  </style>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" />
-<nav class="mobile-bottom-nav">
-        <div class="nav-items">
-            <a href="{{ url_for('index') }}" class="nav-item">
-                <i class="fas fa-home"></i>
-                <span>Home</span>
-            </a>
-
-            <a href="#" onclick="checkAuth(event, '{{ url_for('report') }}')" class="nav-item">
-                <i class="fas fa-edit"></i>
-                <span>Report</span>
-            </a>
-
-            <a href="{{ url_for('alerts') }}" class="nav-item">
-                <i class="fas fa-bell"></i>
-                <span>Alerts</span>
-            </a>
-
-            <a href="{{ url_for('resource_map') }}" class="nav-item">
-                <i class="fas fa-campground"></i>
-                <span>Camps</span>
-            </a>
-
-            <a href="#" onclick="checkAuth(event, '{{ url_for('safe_route') }}')" class="nav-item">
-                <i class="fas fa-route"></i>
-                <span>Safe Route</span>
-            </a>
-        </div>
-    </nav>
 </body>
-
 </html>
