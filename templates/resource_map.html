@@ -7,168 +7,136 @@
     <title>ResQ - Resource Map</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; overflow: hidden; }
         
         #map {
             height: 100%;
             width: 100%;
         }
 
-        /* Sidebar Styling */
-        .camp-list::-webkit-scrollbar { width: 6px; }
-        .camp-list::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
-        
-        /* Smooth transition for sidebar movement */
-        #sidebar-panel {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        /* --- SIDEBAR DRAWER (Glassmorphism) --- */
+        #resource-drawer {
+            position: fixed; top: 0; left: 0; height: 100vh; width: 85%; max-width: 340px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            z-index: 3000;
+            transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 10px 0 25px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.5);
         }
+        #resource-drawer.open { transform: translateX(0); }
 
-        #loading { display: none; }
-
-        /* --- FLOATING SIDEBAR (Fullscreen Mode) --- */
-        .floating-sidebar {
-            position: absolute !important;
-            top: 20px;
-            right: 80px; /* To the left of the fullscreen button */
-            width: 320px !important;
-            height: auto !important;
-            max-height: 80vh;
-            border-radius: 16px !important;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important;
-            z-index: 50;
-            border: 1px solid rgba(0,0,0,0.1);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+        #drawer-backdrop {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.3);
+            backdrop-filter: blur(3px);
+            z-index: 2900; display: none; opacity: 0; transition: opacity 0.3s;
         }
+        #drawer-backdrop.visible { display: block; opacity: 1; }
 
-        /* Mobile specific adjustments for floating sidebar */
-        @media (max-width: 768px) {
-            .floating-sidebar {
-                width: 90% !important;
-                right: 5% !important;
-                top: 70px; /* Below the top controls */
-            }
-        }
+        .camp-list::-webkit-scrollbar { width: 5px; }
+        .camp-list::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
 
-        /* Fullscreen Map Mode */
+        /* --- FULLSCREEN --- */
         .map-fullscreen {
-            height: 100vh !important;
-            width: 100vw !important;
-            position: fixed !important;
-            top: 0;
-            left: 0;
-            z-index: 40;
+            position: fixed !important; top: 0; left: 0;
+            width: 100vw !important; height: 100vh !important;
+            z-index: 2000 !important;
         }
 
+        /* --- MAP CONTROLS --- */
+        
+        /* Map Title Overlay */
+        .map-title-overlay {
+            position: absolute; top: 20px; left: 20px; z-index: 10;
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); /* Indigo Gradient */
+            color: white;
+            padding: 8px 18px; border-radius: 99px;
+            box-shadow: 0 8px 20px rgba(67, 56, 202, 0.3);
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            font-size: 11px; font-weight: 800; letter-spacing: 1px;
+            display: flex; align-items: center;
+        }
+        
+        .live-dot {
+            width: 8px; height: 8px; background: #fff;
+            border-radius: 50%; display: inline-block; margin-right: 8px;
+            animation: pulse-white 2s infinite;
+        }
+        @keyframes pulse-white { 
+            0% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); } 
+            70% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 255, 255, 0); }
+            100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+
+        /* Fullscreen Button */
+        .expand-btn {
+            position: absolute; top: 20px; right: 20px; 
+            z-index: 100; background: white; color: #475569;
+            width: 44px; height: 44px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); cursor: pointer;
+            transition: all 0.2s; border: 1px solid #e2e8f0;
+        }
+        .expand-btn:hover { background: #f8fafc; color: #4f46e5; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+        .expand-btn:active { transform: scale(0.95); }
+
+        #loading { display: none; } 
+
+        /* --- LAYOUT --- */
+        @media (max-width: 768px) {
+            body { padding-bottom: 80px; }
+            .main-panel-height { height: auto; flex-shrink: 0; }
+            .map-container-mobile { height: 100%; flex: 1; }
+        }
+        @media (min-width: 769px) {
+            .main-panel-height { width: 26rem; height: 100%; border-right: 1px solid #e2e8f0; }
+        }
+
+        /* --- BOTTOM NAV --- */
         .mobile-bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0;
-            background: white; box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-            z-index: 1000; padding: 8px 0;
-            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+            background: white; box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+            z-index: 1000; padding: 12px 0;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            border-top: 1px solid #f1f5f9;
         }
         .mobile-bottom-nav .nav-items { display: flex; justify-content: space-around; }
         .mobile-bottom-nav .nav-item {
             display: flex; flex-direction: column; align-items: center;
-            padding: 8px 12px; color: #64748b; text-decoration: none;
-            font-size: 11px; font-weight: 500; border-radius: 8px;
+            padding: 8px 12px; color: #94a3b8; text-decoration: none;
+            font-size: 11px; font-weight: 600; border-radius: 12px;
+            transition: all 0.2s;
         }
-        .mobile-bottom-nav .nav-item.active { color: #2563eb; background: #eff6ff; }
+        .mobile-bottom-nav .nav-item:hover { color: #4f46e5; background: #eff6ff; }
+        .mobile-bottom-nav .nav-item.active { color: #4f46e5; background: #eff6ff; }
 
-        /* Map Controls */
-        .map-overlay-btn {
-            position: absolute; top: 20px; right: 20px; z-index: 60; /* Higher than sidebar */
-            background: white; color: #1e293b;
-            width: 44px; height: 44px; border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            cursor: pointer; transition: all 0.2s;
-            border: 1px solid rgba(0,0,0,0.05);
-            font-size: 18px;
-        }
-        .map-overlay-btn:active { transform: scale(0.95); }
-        .map-overlay-btn:hover { background: #f8fafc; color: #2563eb; }
-
-        .map-title-overlay {
-            position: absolute; top: 20px; left: 20px; z-index: 10;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(4px);
-            padding: 8px 12px; border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border: 1px solid rgba(0,0,0,0.05);
-            pointer-events: none;
-        }
-        .map-title-text {
-            font-size: 12px; font-weight: 800; color: #dc2626;
-            text-transform: uppercase; letter-spacing: 0.5px;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .live-dot {
-            width: 8px; height: 8px; background: #dc2626;
-            border-radius: 50%; 
-            animation: pulse-red 1.5s infinite;
-        }
-        @keyframes pulse-red {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.5); opacity: 0.5; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        /* SOS Floating Button Style */
-        .mobile-sos-bar {
-            position: fixed;
-            bottom: 85px; 
-            left: 20px;
-            right: 20px;
-            z-index: 999; 
-        }
-
+        /* --- SOS BUTTON --- */
+        .mobile-sos-bar { position: fixed; bottom: 90px; left: 24px; right: 24px; z-index: 999; }
         .mobile-sos-btn {
-            width: 100%;
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); 
-            color: white;
-            padding: 16px 20px;
-            border-radius: 18px;
-            border: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.4); 
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-weight: 800;
-            font-size: 18px;
-            cursor: pointer;
+            width: 100%; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); 
+            color: white; padding: 16px 24px; border-radius: 20px; border: none;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.5); font-weight: 800; font-size: 18px; cursor: pointer;
             transition: transform 0.2s;
         }
-        .pulse-icon { animation: sos-pulse 2s infinite; }
-        @keyframes sos-pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.1); }
-            100% { opacity: 1; transform: scale(1); }
-        }
+        .mobile-sos-btn:active { transform: scale(0.98); }
         
-        /* Modal Styles */
+        /* --- MODAL --- */
         .custom-modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6); z-index: 2000;
-            display: none; align-items: center; justify-content: center;
-            backdrop-filter: blur(5px); opacity: 0; transition: opacity 0.3s;
+            background: rgba(0,0,0,0.6); z-index: 5000;
+            display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);
         }
         .custom-modal-box {
             background: white; width: 85%; max-width: 320px;
             border-radius: 24px; padding: 24px; text-align: center;
-            transform: scale(0.9); transition: transform 0.3s;
             box-shadow: 0 20px 60px rgba(0,0,0,0.2);
         }
-        .modal-icon-circle {
-            width: 60px; height: 60px; background: #ecfdf5; color: #10b981;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 28px; margin: 0 auto 16px;
-        }
         .modal-btn-ok {
-            background: #1e293b; color: white; width: 100%; padding: 14px;
+            background: #0f172a; color: white; width: 100%; padding: 14px;
             border-radius: 14px; font-weight: 700; border: none; margin-top: 20px;
         }
     </style>
@@ -176,41 +144,40 @@
 
 <body class="bg-gray-50 h-screen flex flex-col overflow-hidden">
 
-    <div id="top-nav" class="bg-white border-b border-gray-200 px-4 py-3 shrink-0">
-        <a href="{{ url_for('index') }}" class="inline-flex items-center text-gray-600 hover:text-blue-600 transition">
+    <div id="top-nav" class="bg-white border-b border-gray-100 px-6 py-4 shrink-0">
+        <a href="{{ url_for('index') }}" class="inline-flex items-center text-gray-500 hover:text-indigo-600 transition font-bold text-sm">
             <i class="fas fa-arrow-left mr-2"></i>
-            <span class="font-medium">Back to Home</span>
+            <span>Back to Home</span>
         </a>
     </div>
 
     <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
 
-        <div id="sidebar-panel" class="w-full md:w-96 bg-white shadow-xl z-10 flex flex-col border-r border-gray-200 mobile-sidebar-height">
-            <div class="p-5 border-b border-gray-100 bg-gray-50 shrink-0">
-    <div class="flex justify-between items-start">
-        <div>
-            <h2 class="text-lg font-bold text-gray-800">Resources</h2>
-            <p class="text-xs text-gray-500">Nearby shelters & aid.</p>
-        </div>
-        </div>
+        <div id="main-panel" class="bg-white shadow-xl z-10 flex flex-col main-panel-height relative">
+            <div class="p-6 border-b border-gray-100 bg-white shrink-0">
+                <div class="flex justify-between items-start mb-5">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-slate-800">Resources</h2>
+                        <p class="text-xs font-semibold text-slate-400 mt-1 uppercase tracking-wide">Nearby Aid & Shelters</p>
+                    </div>
+                    <button onclick="toggleDrawer()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-600 border border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition shadow-sm" title="View List">
+                        <i class="fas fa-bars text-lg"></i>
+                    </button>
+                </div>
 
-    <button onclick="findNearestCamp()"
-        class="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg shadow-md transition transform active:scale-95 flex items-center justify-center space-x-2 text-sm">
-        <i class="fas fa-location-arrow"></i>
-        <span>Navigate to Nearest</span>
-    </button>
-    <p id="status-msg" class="text-xs text-center text-gray-500 mt-2 min-h-[1.5rem]"></p>
-</div>
-
-            <div class="py-2 px-3 bg-white border-b grid grid-cols-2 gap-2 text-xs shrink-0">
-                <div class="flex items-center"><i class="fas fa-briefcase-medical text-red-500 w-4 mr-1"></i> <span>Medical</span></div>
-                <div class="flex items-center"><i class="fas fa-home text-blue-500 w-4 mr-1"></i> <span>Shelter</span></div>
-                <div class="flex items-center"><i class="fas fa-utensils text-orange-500 w-4 mr-1"></i> <span>Food</span></div>
-                <div class="flex items-center"><div style="width:10px; height:10px; background:red; border-radius:50%; margin-right:6px; opacity:0.6;"></div> <span>Danger Zone</span></div>
+                <button onclick="findNearestCamp()"
+                    class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-100 transition transform active:scale-[0.98] flex items-center justify-center space-x-2 text-sm tracking-wide">
+                    <i class="fas fa-location-arrow"></i>
+                    <span>Navigate to Nearest</span>
+                </button>
+                <p id="status-msg" class="text-xs text-center text-slate-500 mt-3 font-medium min-h-[1.5rem]"></p>
             </div>
 
-            <div id="camp-list-container" class="camp-list flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50">
-                <p class="text-center text-gray-400 mt-10"><i class="fas fa-spinner fa-spin mr-2"></i> Loading resources...</p>
+            <div class="p-5 bg-slate-50/80 border-b border-gray-100 grid grid-cols-2 gap-3 text-xs font-bold text-slate-600 shrink-0">
+                <div class="flex items-center bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm"><img src="https://maps.google.com/mapfiles/kml/pal3/icon46.png" class="w-5 h-5 mr-2"> <span>Medical</span></div>
+                <div class="flex items-center bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm"><img src="https://maps.google.com/mapfiles/kml/pal2/icon5.png" class="w-5 h-5 mr-2"> <span>Shelter</span></div>
+                <div class="flex items-center bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm"><img src="https://maps.google.com/mapfiles/kml/pal2/icon40.png" class="w-5 h-5 mr-2"> <span>Food</span></div>
+                <div class="flex items-center bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm"><img src="https://maps.google.com/mapfiles/kml/pal3/icon26.png" class="w-5 h-5 mr-2"> <span>Supplies</span></div>
             </div>
         </div>
 
@@ -218,40 +185,50 @@
             <div id="map"></div>
             
             <div class="map-title-overlay">
-                <span class="map-title-text">
-                    <div class="live-dot"></div> LIVE RESOURCE MAP
-                </span>
+                <div class="live-dot"></div> LIVE MAP
             </div>
 
-            <button class="map-overlay-btn" onclick="toggleMapFullscreen()" title="Toggle Fullscreen">
+            <button class="expand-btn" onclick="toggleMapFullscreen()" title="Fullscreen">
                 <i id="fullscreen-icon" class="fas fa-expand"></i>
             </button>
             
-            <div id="loading" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 text-white">
+            <div id="loading" class="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 text-slate-800">
                 <div class="text-center">
-                    <i class="fas fa-spinner fa-spin text-4xl mb-2"></i>
-                    <p>Calculating route...</p>
+                    <i class="fas fa-circle-notch fa-spin text-4xl mb-3 text-indigo-600"></i>
+                    <p class="font-bold text-sm">Locating...</p>
                 </div>
             </div>
         </div>
     </div>
 
+    <div id="drawer-backdrop" onclick="toggleDrawer()"></div>
+    <div id="resource-drawer">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center shrink-0 bg-white">
+            <h3 class="font-bold text-lg text-slate-800">All Resources</h3>
+            <button onclick="toggleDrawer()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500 transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="camp-list-container" class="camp-list flex-1 overflow-y-auto p-4 space-y-3">
+            <p class="text-center text-slate-400 mt-10 text-sm">Loading resources...</p>
+        </div>
+    </div>
+
     <div class="mobile-sos-bar">
         <button id="sos-btn" class="mobile-sos-btn" onclick="triggerSOS()">
-            <span class="flex items-center gap-3">
-                <i class="fas fa-broadcast-tower pulse-icon"></i> 
-                <span id="sos-text">SOS Call</span>
-            </span>
+            <span class="flex items-center gap-3"><i class="fas fa-broadcast-tower pulse-icon"></i> <span id="sos-text">SOS Call</span></span>
             <i class="fas fa-phone-alt"></i>
         </button>
     </div>
 
     <div id="custom-modal" class="custom-modal-overlay">
         <div class="custom-modal-box">
-            <div class="modal-icon-circle"><i class="fas fa-check"></i></div>
-            <h3 style="font-size:18px; font-weight:800; margin-bottom:8px;">ACKNOWLEDGED</h3>
-            <p style="font-size:14px; color:#64748b; line-height:1.5;">Emergency Signal Received.<br>Location shared.</p>
-            <button id="ack-close-btn" type="button" class="modal-btn-ok">OK</button>
+            <div class="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-600">
+                <i class="fas fa-check text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-extrabold text-slate-800 mb-2">ACKNOWLEDGED</h3>
+            <p class="text-sm text-slate-500 leading-relaxed">Emergency Signal Received.<br>Help is on the way.</p>
+            <button id="ack-close-btn" class="modal-btn-ok hover:bg-slate-800 transition">OK</button>
         </div>
     </div>
 
@@ -267,54 +244,33 @@
 
     <script>
         let map;
-        let userMarker;
         let directionsService;
         let directionsRenderer;
         let allCamps = [];
-        let userLocation = null;
         let isFullscreen = false;
 
         const icons = {
-            'Medical': 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
-            'Shelter': 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-            'Food': 'http://maps.google.com/mapfiles/ms/icons/orange-dot.png',
-            'User': 'http://maps.google.com/mapfiles/kml/shapes/man.png'
+            'Medical': 'https://maps.google.com/mapfiles/kml/pal3/icon46.png',
+            'Shelter': 'https://maps.google.com/mapfiles/kml/pal2/icon5.png',
+            'Food': 'https://maps.google.com/mapfiles/kml/pal2/icon40.png',
+            'Clothes': 'https://maps.google.com/mapfiles/kml/pal3/icon26.png',
+            'User': 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
         };
 
         function initMap() {
             const defaultLoc = { lat: 18.6279, lng: 73.8004 }; 
-
             map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 13,
-                center: defaultLoc,
-                mapTypeControl: false,
-                fullscreenControl: false,
-                streetViewControl: false,
+                zoom: 13, center: defaultLoc, disableDefaultUI: true,
                 styles: [{ featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }]
-            });
-            
-            // Double click map to toggle fullscreen (optional ux)
-            map.addListener('dblclick', function() {
-                toggleMapFullscreen();
             });
 
             directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer({
-                map: map,
-                suppressMarkers: true,
-                polylineOptions: { strokeColor: "#2563EB", strokeWeight: 5, strokeOpacity: 0.7 }
-            });
+            directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true });
 
-            // Load Heatmap Data
-            fetch("/danger_zones")
-                .then(r => r.json())
-                .then(data => {
-                    const heatmapData = data.map(zone => ({ location: new google.maps.LatLng(zone.latitude, zone.longitude), weight: zone.report_count }));
-                    new google.maps.visualization.HeatmapLayer({
-                        data: heatmapData, map: map, radius: 35, opacity: 0.6,
-                        gradient: ['rgba(0, 255, 0, 0)', 'rgba(255, 255, 0, 0.7)', 'rgba(255, 165, 0, 0.8)', 'rgba(255, 0, 0, 1)']
-                    });
-                });
+            fetch("/danger_zones").then(r => r.json()).then(data => {
+                const heatmapData = data.map(zone => ({ location: new google.maps.LatLng(zone.latitude, zone.longitude), weight: zone.report_count }));
+                new google.maps.visualization.HeatmapLayer({ data: heatmapData, map: map, radius: 35, opacity: 0.6 }).setMap(map);
+            });
 
             fetchCamps();
             
@@ -325,17 +281,19 @@
             }
         }
 
+        function toggleDrawer() {
+            const drawer = document.getElementById('resource-drawer');
+            const backdrop = document.getElementById('drawer-backdrop');
+            drawer.classList.toggle('open');
+            backdrop.classList.toggle('visible');
+        }
+
         async function fetchCamps() {
             try {
                 const response = await fetch('/api/resource_camps');
                 allCamps = await response.json();
-                renderCampList(allCamps); // Populates the sidebar
-
-                const bounds = new google.maps.LatLngBounds();
-                allCamps.forEach(camp => {
-                    addMarker(camp);
-                    bounds.extend({ lat: camp.latitude, lng: camp.longitude });
-                });
+                renderCampList(allCamps);
+                allCamps.forEach(camp => addMarker(camp));
             } catch (error) {
                 console.error('Error fetching camps:', error);
                 document.getElementById('camp-list-container').innerHTML = '<p class="text-center text-red-500 mt-4">Failed to load resources.</p>';
@@ -347,87 +305,81 @@
             container.innerHTML = '';
             
             if (camps.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-500 mt-4">No camps found nearby.</p>';
+                container.innerHTML = '<p class="text-center text-slate-400 mt-4">No camps found nearby.</p>';
                 return;
             }
 
             camps.forEach(camp => {
                 const item = document.createElement('div');
-                item.className = 'bg-white p-3 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer flex items-center justify-between group';
+                item.className = 'bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition duration-200 cursor-pointer flex items-center justify-between group';
+                
                 item.onclick = () => {
-                    // Navigate to camp location
-                    if (!isFullscreen) toggleMapFullscreen(); // Auto fullscreen on selection
+                    toggleDrawer(); 
+                    if (!isFullscreen) toggleMapFullscreen(); 
                     map.setZoom(16);
                     map.panTo({ lat: camp.latitude, lng: camp.longitude });
                 };
 
                 let iconClass = "fa-utensils text-orange-500";
                 let bgClass = "bg-orange-50";
+                
                 if (camp.camp_type === 'Medical') { iconClass = "fa-briefcase-medical text-red-500"; bgClass = "bg-red-50"; }
-                if (camp.camp_type === 'Shelter') { iconClass = "fa-home text-blue-500"; bgClass = "bg-blue-50"; }
+                else if (camp.camp_type === 'Shelter') { iconClass = "fa-home text-blue-500"; bgClass = "bg-blue-50"; }
+                else if (camp.camp_type === 'Clothes') { iconClass = "fa-tshirt text-green-500"; bgClass = "bg-green-50"; }
 
                 item.innerHTML = `
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 ${bgClass} rounded-full flex items-center justify-center flex-shrink-0">
-                            <i class="fas ${iconClass} text-xs"></i>
+                    <div class="flex items-center w-full">
+                        <div class="w-10 h-10 ${bgClass} rounded-full flex items-center justify-center flex-shrink-0 mr-4">
+                            <i class="fas ${iconClass}"></i>
                         </div>
-                        <div class="ml-3">
-                            <h4 class="font-bold text-gray-800 text-sm group-hover:text-blue-600 transition">${camp.name}</h4>
-                            <p class="text-xs text-gray-500 truncate max-w-[150px]">${camp.location}</p>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-slate-800 text-sm truncate group-hover:text-indigo-600 transition">${camp.name}</h4>
+                            <p class="text-xs text-slate-500 truncate flex items-center gap-1">
+                                <i class="fas fa-map-marker-alt text-slate-300"></i> ${camp.location}
+                            </p>
                         </div>
+                        <i class="fas fa-chevron-right text-slate-300 text-xs ml-2"></i>
                     </div>
-                    <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
                 `;
                 container.appendChild(item);
             });
         }
 
-        // Fullscreen & Floating Sidebar Toggle
         function toggleMapFullscreen() {
-            const sidebar = document.getElementById('sidebar-panel');
             const mapContainer = document.getElementById('map-container');
             const icon = document.getElementById('fullscreen-icon');
-
             isFullscreen = !isFullscreen;
 
             if (isFullscreen) {
-                // Enter Fullscreen
-                sidebar.classList.add('floating-sidebar');
                 mapContainer.classList.add('map-fullscreen');
-                icon.className = 'fas fa-compress'; 
+                icon.className = 'fas fa-compress text-slate-700';
             } else {
-                // Exit Fullscreen
-                sidebar.classList.remove('floating-sidebar');
                 mapContainer.classList.remove('map-fullscreen');
-                icon.className = 'fas fa-expand';
+                icon.className = 'fas fa-expand text-slate-700';
             }
-            
-            // Trigger Map Resize to prevent gray areas
-            setTimeout(() => {
-                google.maps.event.trigger(map, "resize");
-            }, 300);
+            setTimeout(() => { google.maps.event.trigger(map, "resize"); }, 300);
         }
 
         function addMarker(camp) {
             let iconUrl = icons[camp.camp_type] || icons['Food'];
             const marker = new google.maps.Marker({
                 position: { lat: camp.latitude, lng: camp.longitude },
-                map: map,
-                title: camp.name,
-                icon: { url: iconUrl }
+                map: map, title: camp.name, icon: { url: iconUrl }
             });
-
+            
+            // UPDATED: Matching the Manage Page Popup Content
             const infoContent = `
                 <div class="p-2 min-w-[200px]">
-                    <h3 class="font-bold text-gray-800 text-sm">${camp.name}</h3>
+                    <h3 class="font-bold text-gray-800 text-lg">${camp.name}</h3>
                     <div class="flex items-center mt-1 mb-2">
-                        <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">${camp.camp_type}</span>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded">${camp.camp_type}</span>
                     </div>
-                    <button onclick="routeTo(${camp.latitude}, ${camp.longitude})" class="mt-2 w-full bg-blue-600 text-white text-xs font-bold py-1.5 px-2 rounded-lg hover:bg-blue-700">
-                        Navigate Here
-                    </button>
+                    <p class="text-sm text-gray-600 mb-1"><i class="fas fa-map-marker-alt text-red-400 mr-1"></i> ${camp.location}</p>
+                    ${camp.contact_info ? `<p class="text-sm text-gray-600"><i class="fas fa-phone text-green-500 mr-1"></i> ${camp.contact_info}</p>` : ''}
+                    <button onclick="routeTo(${camp.latitude}, ${camp.longitude})" class="mt-3 w-full bg-indigo-600 text-white text-xs py-1.5 rounded font-bold hover:bg-indigo-700 transition">Navigate Here</button>
                 </div>
             `;
+            
             const infoWindow = new google.maps.InfoWindow({ content: infoContent });
             marker.addListener("click", () => infoWindow.open(map, marker));
         }
@@ -435,63 +387,53 @@
         function findNearestCamp() {
             const statusMsg = document.getElementById('status-msg');
             const loading = document.getElementById('loading');
-            statusMsg.textContent = "Locating you...";
             
+            statusMsg.textContent = "";
+            loading.style.display = 'flex'; 
+
             if (navigator.geolocation) {
-                loading.style.display = 'flex';
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
-                        userLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
-                        if (userMarker) userMarker.setMap(null);
-                        userMarker = new google.maps.Marker({
-                            position: userLocation, map: map, title: "You", animation: google.maps.Animation.DROP
-                        });
-
+                        const userLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
                         let closestCamp = null;
                         let minDist = Infinity;
+                        
                         allCamps.forEach(camp => {
                              const d = Math.sqrt(Math.pow(camp.latitude - userLocation.lat, 2) + Math.pow(camp.longitude - userLocation.lng, 2));
                              if(d < minDist) { minDist = d; closestCamp = camp; }
                         });
 
                         loading.style.display = 'none';
+
                         if (closestCamp) {
-                            statusMsg.textContent = `Route found to: ${closestCamp.name}`;
-                            if (!isFullscreen) toggleMapFullscreen();
-                            routeTo(closestCamp.latitude, closestCamp.longitude);
+                            statusMsg.textContent = `Nearest: ${closestCamp.name}`;
+                            map.setZoom(15);
+                            map.panTo({ lat: closestCamp.latitude, lng: closestCamp.longitude });
+                        } else {
+                            statusMsg.textContent = "No camps found.";
                         }
                     },
-                    () => { loading.style.display = 'none'; statusMsg.textContent = "Location denied."; }
+                    () => { 
+                        loading.style.display = 'none'; 
+                        statusMsg.textContent = "Location denied."; 
+                    }
                 );
+            } else {
+                loading.style.display = 'none';
+                statusMsg.textContent = "Geolocation not supported.";
             }
-        }
-
-        function routeTo(destLat, destLng) {
-            if (!userLocation) { findNearestCamp(); return; }
-            directionsService.route({
-                origin: userLocation,
-                destination: { lat: destLat, lng: destLng },
-                travelMode: google.maps.TravelMode.DRIVING
-            }, (result, status) => {
-                if (status == 'OK') directionsRenderer.setDirections(result);
-            });
         }
 
         function checkAuth(e, url) { e.preventDefault(); window.location.href = url; }
         
         function triggerSOS() {
-            const btn = document.getElementById('sos-btn');
-            const text = document.getElementById('sos-text');
-            const modal = document.getElementById('custom-modal');
-            
+            const btn = document.getElementById('sos-btn'); const text = document.getElementById('sos-text'); const modal = document.getElementById('custom-modal');
             if(btn) { btn.disabled = true; btn.style.background = "#059669"; }
             if(text) text.innerText = "Sending...";
-
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((pos) => {
                     fetch('/api/send_sos', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ latitude: pos.coords.latitude, longitude: pos.coords.longitude })
                     }).then(() => {
                         if(text) text.innerText = "Signal Sent!";
