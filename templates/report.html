@@ -312,7 +312,10 @@
 <body>
     <div class="report-container">
         <div style="margin-bottom: 1.5rem;" data-aos="fade-down">
-            <a href="{{ url_for('index') }}" style="text-decoration: none; color: var(--text-dark); display: inline-flex; align-items: center; gap: 0.8rem; font-weight: 600; font-size: 1.1rem; background: rgba(255,255,255,0.5); padding: 0.8rem 1.2rem; border-radius: 12px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.3); transition: all 0.3s ease;" onmouseover="this.style.transform='translateX(-5px)'; this.style.background='rgba(255,255,255,0.8)'" onmouseout="this.style.transform='translateX(0)'; this.style.background='rgba(255,255,255,0.5)'">
+            <a href="{{ url_for('index') }}"
+                style="text-decoration: none; color: var(--text-dark); display: inline-flex; align-items: center; gap: 0.8rem; font-weight: 600; font-size: 1.1rem; background: rgba(255,255,255,0.5); padding: 0.8rem 1.2rem; border-radius: 12px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.3); transition: all 0.3s ease;"
+                onmouseover="this.style.transform='translateX(-5px)'; this.style.background='rgba(255,255,255,0.8)'"
+                onmouseout="this.style.transform='translateX(0)'; this.style.background='rgba(255,255,255,0.5)'">
                 <i class="fas fa-arrow-left"></i> Back to Home
             </a>
         </div>
@@ -346,9 +349,19 @@
                         <i class="fas fa-map-marker-alt"></i>
                         Location Details
                     </label>
-                    <input type="text" id="location" name="location" class="form-input"
-                        placeholder="Enter exact location or landmark...">
-                    <span class="input-hint">We'll automatically detect location if not provided</span>
+                    <div style="position:relative;">
+                        <input type="text" id="location" name="location" class="form-input"
+                            placeholder="Start typing an address or landmark…" autocomplete="off">
+                        <div id="location-verify-badge"
+                            style="display:none; position:absolute; right:14px; top:50%; transform:translateY(-50%); background:#059669; color:white; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; pointer-events:none;">
+                            ✓ Verified
+                        </div>
+                    </div>
+                    <!-- Hidden fields carrying exact lat/lng from Places API -->
+                    <input type="hidden" id="place_lat" name="place_lat">
+                    <input type="hidden" id="place_lng" name="place_lng">
+                    <span class="input-hint" id="location-hint">Start typing — select from the dropdown for precise
+                        placement</span>
                 </div>
 
                 <div class="form-group">
@@ -410,6 +423,69 @@
             </form>
         </div>
     </div>
+    <!-- Google Maps JS (Places Autocomplete) -->
+    <script>
+        (function () {
+            // Load Google Maps API key from our endpoint, then inject the script
+            fetch('/api/maps/key')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.api_key) return;
+                    const s = document.createElement('script');
+                    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + data.api_key
+                        + '&libraries=places&callback=initLocationAutocomplete';
+                    s.async = true;
+                    s.defer = true;
+                    document.head.appendChild(s);
+                });
+        })();
+
+        function initLocationAutocomplete() {
+            const input = document.getElementById('location');
+            const latField = document.getElementById('place_lat');
+            const lngField = document.getElementById('place_lng');
+            const badge = document.getElementById('location-verify-badge');
+            const hint = document.getElementById('location-hint');
+
+            const autocomplete = new google.maps.places.Autocomplete(input, {
+                componentRestrictions: { country: 'in' },   // India only
+                fields: ['geometry', 'formatted_address', 'name']
+            });
+
+            autocomplete.addListener('place_changed', function () {
+                const place = autocomplete.getPlace();
+                if (!place.geometry || !place.geometry.location) {
+                    // User typed something but didn't pick from dropdown
+                    latField.value = '';
+                    lngField.value = '';
+                    badge.style.display = 'none';
+                    hint.textContent = 'Please select a suggestion from the dropdown for best accuracy.';
+                    hint.style.color = '#dc2626';
+                    return;
+                }
+                latField.value = place.geometry.location.lat();
+                lngField.value = place.geometry.location.lng();
+                // Use the full formatted address as the location name
+                if (place.formatted_address) {
+                    input.value = place.formatted_address;
+                }
+                badge.style.display = 'block';
+                hint.textContent = 'Location verified via Google Places ✓';
+                hint.style.color = '#059669';
+            });
+
+            // If the user clears the field, clear the hidden coords too
+            input.addEventListener('input', function () {
+                if (input.value.trim() === '') {
+                    latField.value = '';
+                    lngField.value = '';
+                    badge.style.display = 'none';
+                    hint.textContent = 'Start typing — select from the dropdown for precise placement';
+                    hint.style.color = '';
+                }
+            });
+        }
+    </script>
 
     <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
     <script>

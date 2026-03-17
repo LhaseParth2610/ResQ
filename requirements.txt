@@ -101,3 +101,4 @@ weasel
 Werkzeug
 wrapt
 google-generativeai
+openpyxl

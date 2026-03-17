@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -28,7 +29,7 @@ class Report(db.Model):
     disaster_type = db.Column(db.String(50))
     extracted_locations = db.Column(db.Text)
     image = db.Column(db.LargeBinary, nullable=True)
-    created_at = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)  # Timestamp added
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
 
 class DangerZone(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -36,6 +37,8 @@ class DangerZone(db.Model):
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     report_count = db.Column(db.Integer, default=1)
+    severity = db.Column(db.Float, default=1.0)          # 1.0 = fresh, decays toward 0.0
+    last_reported_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class BroadcastHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -43,17 +46,14 @@ class BroadcastHistory(db.Model):
     location = db.Column(db.String(255), nullable=False)
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
 
-# --- OPEN models.py ---
-# Add this class to your models.py file
-
 class ResourceCamp(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False) # e.g., "Central High School Shelter"
-    camp_type = db.Column(db.String(50), nullable=False) # Food, Medical, Shelter, etc.
-    location = db.Column(db.String(255), nullable=False) # Address text
+    name = db.Column(db.String(100), nullable=False)
+    camp_type = db.Column(db.String(50), nullable=False)
+    location = db.Column(db.String(255), nullable=False)
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
-    contact_info = db.Column(db.String(100)) # Optional phone/contact
+    contact_info = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
     def to_dict(self):

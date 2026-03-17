@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config['SECRET_KEY'] = 'your_secret_key_here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:root@localhost/disaster_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin@localhost/disaster_management'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configure Flask-Mail
@@ -92,27 +92,109 @@ def classify_report(text):
         return "Earthquake"
     return "Unknown"
 
-# Extract location entities using spaCy (unchanged)
+# Extract location entities using spaCy — returns a comma-joined string of found names
 def extract_entities(text):
     logger.debug(f"Extracting entities from text: {text}")
     doc = nlp(text)
-    
-    # Get all entities and their labels
+
     all_entities = [(ent.text, ent.label_) for ent in doc.ents]
     logger.debug(f"All entities found: {all_entities}")
-    
-    # Look for location entities
+
     locations = {ent.text for ent in doc.ents if ent.label_ in ("GPE", "LOC", "FAC")}
     logger.debug(f"Location entities found: {locations}")
-    
-    # If no locations found by spaCy, try to extract from the location field
+
     if not locations:
         logger.debug("No locations found by spaCy, will use manual location field")
         return ""
-    
+
     result = ", ".join(locations)
     logger.debug(f"Final extracted locations: {result}")
     return result
+
+
+# ---------------------------------------------------------------------------
+# Location geocoding helpers
+# ---------------------------------------------------------------------------
+
+_CITY_INDICATORS = ("GPE",)  # spaCy label for cities/countries/states
+
+def _extract_city_hint(text):
+    """Return the first GPE entity from text (likely a city/state), or None."""
+    doc = nlp(text)
+    for ent in doc.ents:
+        if ent.label_ in _CITY_INDICATORS:
+            return ent.text
+    return None
+
+
+def _build_geocoding_queries(extracted_locations_str, location_field):
+    """Build a list of (full_query, city_hint) tuples for geocoding.
+
+    Strategy - Location Field First:
+    - If the user provided a location field, geocode it directly.
+      Do NOT mix in spaCy entities - they come from the description
+      and often pick up street names that pollute/misdirect the query.
+      e.g. user types 'Anandnagar, Sinhagad Rd, Pune' -> geocode exactly that.
+    - Only fall back to spaCy entities if the location field is blank.
+    """
+    if location_field and location_field.strip():
+        city_hint = _extract_city_hint(location_field)
+        return [(location_field.strip(), city_hint)]
+
+    # No location field - fall back to spaCy entities from the description
+    queries = []
+    if extracted_locations_str:
+        for entity in extracted_locations_str.split(", "):
+            entity = entity.strip()
+            if entity:
+                queries.append((entity, _extract_city_hint(entity)))
+    return queries
+
+
+# Proximity threshold for deduplicating danger zones (~200 m in degrees)
+_DEDUP_RADIUS = 0.002
+
+
+def _find_zone_by_proximity(lat, lng):
+    """Return an existing DangerZone within _DEDUP_RADIUS of (lat, lng), or None."""
+    return DangerZone.query.filter(
+        DangerZone.latitude.between(lat - _DEDUP_RADIUS, lat + _DEDUP_RADIUS),
+        DangerZone.longitude.between(lng - _DEDUP_RADIUS, lng + _DEDUP_RADIUS)
+    ).first()
+
+
+# ---------------------------------------------------------------------------
+# Danger zone decay scheduler job
+# ---------------------------------------------------------------------------
+
+import math as _math
+
+_DECAY_LAMBDA = 0.05   # e^(-λ·h);  half-life ≈ 14 hours
+_MIN_SEVERITY = 0.05   # zones below this are auto-deleted (~3 days silence)
+
+
+def decay_danger_zones():
+    """Exponentially decay severity of all danger zones and delete stale ones.
+    Called every 6 hours by APScheduler.
+    """
+    with app.app_context():
+        now = datetime.utcnow()
+        zones = DangerZone.query.all()
+        deleted = 0
+        updated = 0
+        for zone in zones:
+            if zone.last_reported_at is None:
+                zone.last_reported_at = now
+            hours_elapsed = (now - zone.last_reported_at).total_seconds() / 3600.0
+            # Decay the severity using exponential decay
+            zone.severity = (zone.severity or 1.0) * _math.exp(-_DECAY_LAMBDA * hours_elapsed)
+            if zone.severity < _MIN_SEVERITY:
+                db.session.delete(zone)
+                deleted += 1
+            else:
+                updated += 1
+        db.session.commit()
+        logger.info(f"[decay_danger_zones] updated={updated}, deleted={deleted}")
 
 # Weather API helper function
 @cache.cached(timeout=1800)  # Cache for 30 minutes
@@ -183,6 +265,7 @@ def check_weather_and_broadcast():
 
 # Start the scheduler when the app starts
 def start_scheduler():
+    scheduler.add_job(decay_danger_zones, 'interval', hours=6, id='danger_zone_decay')
     scheduler.start()
     logger.info("Started automated broadcast scheduler.")
 
@@ -329,10 +412,10 @@ def report():
         if image_file and image_file.filename:
             image_data = image_file.read()
             
-            # Verify the image with the LLM
-            if not is_disaster_image(image_data):
-                error_message = 'The uploaded image does not appear to be a valid disaster-related photo.'
-                return render_template('report.html', image_error=error_message)
+            # # Verify the image with the LLM
+            # if not is_disaster_image(image_data):
+            #     error_message = 'The uploaded image does not appear to be a valid disaster-related photo.'
+            #     return render_template('report.html', image_error=error_message)
             
             image = image_data
 
@@ -347,27 +430,71 @@ def report():
         db.session.add(new_report)
         db.session.commit()
 
-        # Process danger zones
-        locations_to_process = []
-        if extracted_locations:
-            locations_to_process.extend(extracted_locations.split(", "))
-        elif location_field:
-            locations_to_process.append(location_field)
-        
-        for loc in locations_to_process:
-            if loc.strip():
-                lat, lng = get_coordinates(loc.strip())
+        # Process danger zones using the exact coordinates captured from Places Autocomplete
+        place_lat_str = request.form.get('place_lat')
+        place_lng_str = request.form.get('place_lng')
+
+        if place_lat_str and place_lng_str:
+            try:
+                lat = float(place_lat_str)
+                lng = float(place_lng_str)
+                
+                existing_zone = _find_zone_by_proximity(lat, lng)
+                if existing_zone:
+                    existing_zone.report_count += 1
+                    existing_zone.severity = 1.0                   # Refresh: active zone
+                    existing_zone.last_reported_at = datetime.utcnow()
+                    logger.debug(f"Refreshed existing zone '{existing_zone.location}' at ({lat},{lng})")
+                else:
+                    # Use the user's location_field as the label
+                    label = location_field.strip() if location_field and location_field.strip() else "Reported Location"
+                    new_zone = DangerZone(
+                        location=label,
+                        latitude=lat,
+                        longitude=lng,
+                        report_count=1,
+                        severity=1.0,
+                        last_reported_at=datetime.utcnow()
+                    )
+                    db.session.add(new_zone)
+                    logger.debug(f"Created new zone '{label}' at ({lat},{lng})")
+                
+                db.session.commit()
+            except ValueError:
+                logger.error("Invalid coordinates received from form.")
+        else:
+            # Fallback: if user didn't use the autocomplete dropdown, process using fallback logic
+            logger.debug("No pre-geocoded coordinates found. Falling back to server-side geocoding.")
+            geocoding_queries = _build_geocoding_queries(extracted_locations, location_field)
+
+            for full_query, city_hint in geocoding_queries:
+                if not full_query.strip():
+                    continue
+                lat, lng = get_coordinates(full_query.strip(), city_hint=city_hint)
                 if lat and lng:
-                    existing_zone = DangerZone.query.filter_by(location=loc.strip()).first()
+                    existing_zone = _find_zone_by_proximity(lat, lng)
                     if existing_zone:
                         existing_zone.report_count += 1
+                        existing_zone.severity = 1.0
+                        existing_zone.last_reported_at = datetime.utcnow()
+                        logger.debug(f"Refreshed existing zone '{existing_zone.location}' at ({lat},{lng})")
                     else:
-                        new_zone = DangerZone(location=loc.strip(), latitude=lat, longitude=lng, report_count=1)
+                        label = location_field.strip() if location_field and location_field.strip() else full_query.strip()
+                        new_zone = DangerZone(
+                            location=label,
+                            latitude=lat,
+                            longitude=lng,
+                            report_count=1,
+                            severity=1.0,
+                            last_reported_at=datetime.utcnow()
+                        )
                         db.session.add(new_zone)
+                        logger.debug(f"Created new zone '{label}' at ({lat},{lng})")
                 else:
-                    logger.warning(f"Could not get coordinates for location: {loc.strip()}")
-        
-        db.session.commit()
+                    logger.warning(f"Could not get coordinates for query: {full_query.strip()}")
+            
+            db.session.commit()
+
 
         return redirect(url_for('index'))
 
@@ -381,7 +508,8 @@ def danger_zones():
             "location": zone.location,
             "latitude": zone.latitude,
             "longitude": zone.longitude,
-            "report_count": zone.report_count
+            "report_count": zone.report_count,
+            "severity": round(zone.severity, 3) if zone.severity is not None else 1.0
         } for zone in zones
     ]
     return jsonify(danger_data)
@@ -674,6 +802,50 @@ def delete_resource_camp(camp_id):
         db.session.rollback()
         logger.error(f"Error deleting camp: {str(e)}")
         return jsonify({'success': False, 'message': 'Error deleting camp.'}), 500
+
+import openpyxl
+
+FEEDBACK_FILE = os.path.join(os.path.dirname(__file__), 'feedback_reports.xlsx')
+
+def _get_or_create_feedback_workbook():
+    """Return the workbook and active sheet, creating headers if new."""
+    if os.path.exists(FEEDBACK_FILE):
+        wb = openpyxl.load_workbook(FEEDBACK_FILE)
+        ws = wb.active
+    else:
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Feedback"
+        ws.append(["Timestamp", "Username", "Email", "Category", "Subject", "Message", "Rating"])
+    return wb, ws
+
+@app.route('/feedback', methods=['POST'])
+def feedback():
+    """Receive feedback and save to Excel file."""
+    try:
+        data = request.get_json()
+        category = data.get('category', 'General')
+        subject  = data.get('subject', '')
+        message  = data.get('message', '')
+        rating   = data.get('rating', '')
+
+        if current_user.is_authenticated:
+            username = current_user.username
+            email    = current_user.email
+        else:
+            username = 'Anonymous'
+            email    = ''
+
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        wb, ws = _get_or_create_feedback_workbook()
+        ws.append([timestamp, username, email, category, subject, message, rating])
+        wb.save(FEEDBACK_FILE)
+
+        return jsonify({'status': 'success', 'message': 'Thank you for your feedback!'}), 200
+    except Exception as e:
+        logger.error(f"Feedback error: {e}")
+        return jsonify({'status': 'error', 'message': 'Failed to save feedback.'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
