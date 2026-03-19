@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-import spacy
 import requests
 from submit_report import get_coordinates
 from flask_mail import Mail, Message
@@ -23,7 +22,7 @@ import base64
 import urllib.parse
 # Import models and db instance
 # from models import db, User, Report, DangerZone, BroadcastHistory
-from models import db, User, Report, DangerZone, BroadcastHistory, ResourceCamp 
+from models import db, User, Report, DangerZone, BroadcastHistory, ResourceCamp, Feedback
 # Load environment variables at the top of app.py
 
 # Configure logging
@@ -31,16 +30,25 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
-app.config['SECRET_KEY'] = 'your_secret_key_here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin@localhost/disaster_management'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+
+# Supabase / any cloud postgres may provide postgres:// but SQLAlchemy needs postgresql://
+_db_url = os.getenv('DATABASE_URL', 'postgresql://postgres:admin@localhost/disaster_management')
+if _db_url.startswith('postgres://'):
+    _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = _db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+}
 
 # Configure Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'parthlhase49@gmail.com'
-app.config['MAIL_PASSWORD'] = "tgbc ffqi hqol qylv"
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 
 mail = Mail(app)
 
@@ -54,9 +62,6 @@ db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 migrate = Migrate(app, db)
-
-# Load NLP model
-nlp = spacy.load("en_core_web_trf")
 
 @app.route('/api/maps/key')
 def get_maps_api_key():
@@ -92,63 +97,15 @@ def classify_report(text):
         return "Earthquake"
     return "Unknown"
 
-# Extract location entities using spaCy — returns a comma-joined string of found names
-def extract_entities(text):
-    logger.debug(f"Extracting entities from text: {text}")
-    doc = nlp(text)
-
-    all_entities = [(ent.text, ent.label_) for ent in doc.ents]
-    logger.debug(f"All entities found: {all_entities}")
-
-    locations = {ent.text for ent in doc.ents if ent.label_ in ("GPE", "LOC", "FAC")}
-    logger.debug(f"Location entities found: {locations}")
-
-    if not locations:
-        logger.debug("No locations found by spaCy, will use manual location field")
-        return ""
-
-    result = ", ".join(locations)
-    logger.debug(f"Final extracted locations: {result}")
-    return result
-
-
 # ---------------------------------------------------------------------------
 # Location geocoding helpers
 # ---------------------------------------------------------------------------
 
-_CITY_INDICATORS = ("GPE",)  # spaCy label for cities/countries/states
-
-def _extract_city_hint(text):
-    """Return the first GPE entity from text (likely a city/state), or None."""
-    doc = nlp(text)
-    for ent in doc.ents:
-        if ent.label_ in _CITY_INDICATORS:
-            return ent.text
-    return None
-
-
-def _build_geocoding_queries(extracted_locations_str, location_field):
-    """Build a list of (full_query, city_hint) tuples for geocoding.
-
-    Strategy - Location Field First:
-    - If the user provided a location field, geocode it directly.
-      Do NOT mix in spaCy entities - they come from the description
-      and often pick up street names that pollute/misdirect the query.
-      e.g. user types 'Anandnagar, Sinhagad Rd, Pune' -> geocode exactly that.
-    - Only fall back to spaCy entities if the location field is blank.
-    """
+def _build_geocoding_queries(location_field):
+    """Build geocoding queries from explicit user-provided location text only."""
     if location_field and location_field.strip():
-        city_hint = _extract_city_hint(location_field)
-        return [(location_field.strip(), city_hint)]
-
-    # No location field - fall back to spaCy entities from the description
-    queries = []
-    if extracted_locations_str:
-        for entity in extracted_locations_str.split(", "):
-            entity = entity.strip()
-            if entity:
-                queries.append((entity, _extract_city_hint(entity)))
-    return queries
+        return [location_field.strip()]
+    return []
 
 
 # Proximity threshold for deduplicating danger zones (~200 m in degrees)
@@ -199,7 +156,7 @@ def decay_danger_zones():
 # Weather API helper function
 @cache.cached(timeout=1800)  # Cache for 30 minutes
 def get_weather(location):
-    api_key = 'yOUR_API'  # Replace with your Weatherstack API key (stored securely, e.g., in .env)
+    api_key = os.getenv('WEATHERSTACK_API_KEY')
     url = f"http://api.weatherstack.com/current?access_key={api_key}&query={location}"
     try:
         response = requests.get(url, timeout=5)
@@ -237,9 +194,11 @@ def send_automated_broadcast(zone, weather):
             db.session.add(broadcast)
             db.session.commit()
 
-            # Simulate sending to communities (replace with actual implementation, e.g., email/SMS)
-            recipients = ['prajwalkumbhar2909@gmail.com']  # Example recipient; adjust as needed
-            msg = Message('Automated Emergency Alert', sender="parthlhase49@gmail.com", recipients=recipients)
+            recipients = [r.strip() for r in os.getenv('BROADCAST_RECIPIENT_EMAILS', '').split(',') if r.strip()]
+            if not recipients:
+                logger.warning("No BROADCAST_RECIPIENT_EMAILS set — skipping email for automated broadcast")
+                return
+            msg = Message('Automated Emergency Alert', sender=os.getenv('MAIL_USERNAME'), recipients=recipients)
             msg.body = message
             try:
                 mail.send(msg)
@@ -263,8 +222,12 @@ def check_weather_and_broadcast():
             weather = get_weather(zone.location)
             send_automated_broadcast(zone, weather)
 
-# Start the scheduler when the app starts
+# Start the scheduler when the app starts.
+# Guard against double-start: gunicorn --preload or Flask reloader can call this twice.
 def start_scheduler():
+    if scheduler.running:
+        logger.info("Scheduler already running — skipping start.")
+        return
     scheduler.add_job(decay_danger_zones, 'interval', hours=6, id='danger_zone_decay')
     scheduler.start()
     logger.info("Started automated broadcast scheduler.")
@@ -404,7 +367,7 @@ def report():
     if request.method == 'POST':
         description = request.form.get('description')
         location_field = request.form.get('location')
-        extracted_locations = extract_entities(description)
+        extracted_locations = location_field.strip() if location_field and location_field.strip() else ""
         disaster_type = classify_report(description)
         image_file = request.files['image']
         
@@ -412,10 +375,10 @@ def report():
         if image_file and image_file.filename:
             image_data = image_file.read()
             
-            # # Verify the image with the LLM
-            # if not is_disaster_image(image_data):
-            #     error_message = 'The uploaded image does not appear to be a valid disaster-related photo.'
-            #     return render_template('report.html', image_error=error_message)
+            if os.getenv('ENABLE_IMAGE_VALIDATION', 'false').lower() in ('1', 'true', 'yes'):
+                if not is_disaster_image(image_data):
+                    error_message = 'The uploaded image does not appear to be a valid disaster-related photo.'
+                    return render_template('report.html', image_error=error_message)
             
             image = image_data
 
@@ -465,12 +428,12 @@ def report():
         else:
             # Fallback: if user didn't use the autocomplete dropdown, process using fallback logic
             logger.debug("No pre-geocoded coordinates found. Falling back to server-side geocoding.")
-            geocoding_queries = _build_geocoding_queries(extracted_locations, location_field)
+            geocoding_queries = _build_geocoding_queries(location_field)
 
-            for full_query, city_hint in geocoding_queries:
+            for full_query in geocoding_queries:
                 if not full_query.strip():
                     continue
-                lat, lng = get_coordinates(full_query.strip(), city_hint=city_hint)
+                lat, lng = get_coordinates(full_query.strip())
                 if lat and lng:
                     existing_zone = _find_zone_by_proximity(lat, lng)
                     if existing_zone:
@@ -549,7 +512,11 @@ def sos():
         )
 
         # 4. Send Email
-        msg = Message(subject, sender="parthlhase49@gmail.com", recipients=["prajwalkumbhar2909@gmail.com"])
+        sos_recipients = [r.strip() for r in os.getenv('SOS_RECIPIENT_EMAILS', '').split(',') if r.strip()]
+        if not sos_recipients:
+            logger.warning("SOS_RECIPIENT_EMAILS not configured — SOS email not sent")
+            return jsonify({"status": "success", "message": "SOS recorded (email not configured)"}), 200
+        msg = Message(subject, sender=os.getenv('MAIL_USERNAME'), recipients=sos_recipients)
         msg.body = body_content
         mail.send(msg)
 
@@ -803,47 +770,34 @@ def delete_resource_camp(camp_id):
         logger.error(f"Error deleting camp: {str(e)}")
         return jsonify({'success': False, 'message': 'Error deleting camp.'}), 500
 
-import openpyxl
-
-FEEDBACK_FILE = os.path.join(os.path.dirname(__file__), 'feedback_reports.xlsx')
-
-def _get_or_create_feedback_workbook():
-    """Return the workbook and active sheet, creating headers if new."""
-    if os.path.exists(FEEDBACK_FILE):
-        wb = openpyxl.load_workbook(FEEDBACK_FILE)
-        ws = wb.active
-    else:
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Feedback"
-        ws.append(["Timestamp", "Username", "Email", "Category", "Subject", "Message", "Rating"])
-    return wb, ws
-
 @app.route('/feedback', methods=['POST'])
 def feedback():
-    """Receive feedback and save to Excel file."""
+    """Receive feedback and persist to the database."""
     try:
         data = request.get_json()
         category = data.get('category', 'General')
         subject  = data.get('subject', '')
         message  = data.get('message', '')
-        rating   = data.get('rating', '')
+        rating_raw = data.get('rating', None)
+        rating = int(rating_raw) if rating_raw not in (None, '') else None
 
-        if current_user.is_authenticated:
-            username = current_user.username
-            email    = current_user.email
-        else:
-            username = 'Anonymous'
-            email    = ''
+        username = current_user.username if current_user.is_authenticated else 'Anonymous'
+        email    = current_user.email    if current_user.is_authenticated else ''
 
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        wb, ws = _get_or_create_feedback_workbook()
-        ws.append([timestamp, username, email, category, subject, message, rating])
-        wb.save(FEEDBACK_FILE)
+        entry = Feedback(
+            username=username,
+            email=email,
+            category=category,
+            subject=subject,
+            message=message,
+            rating=rating,
+        )
+        db.session.add(entry)
+        db.session.commit()
 
         return jsonify({'status': 'success', 'message': 'Thank you for your feedback!'}), 200
     except Exception as e:
+        db.session.rollback()
         logger.error(f"Feedback error: {e}")
         return jsonify({'status': 'error', 'message': 'Failed to save feedback.'}), 500
 

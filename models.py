@@ -29,6 +29,9 @@ class Report(db.Model):
     disaster_type = db.Column(db.String(50))
     extracted_locations = db.Column(db.Text)
     image = db.Column(db.LargeBinary, nullable=True)
+    # Future migration path: once Supabase Storage is wired up, store the public URL here
+    # and stop populating the image blob column.
+    image_url = db.Column(db.String(1024), nullable=True)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)
 
 class DangerZone(db.Model):
@@ -66,3 +69,15 @@ class ResourceCamp(db.Model):
             'longitude': self.longitude,
             'contact_info': self.contact_info
         }
+
+
+class Feedback(db.Model):
+    __tablename__ = 'feedback'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), nullable=False, default='Anonymous')
+    email = db.Column(db.String(120), nullable=True)
+    category = db.Column(db.String(50), nullable=False, default='General')
+    subject = db.Column(db.String(200), nullable=True)
+    message = db.Column(db.Text, nullable=False)
+    rating = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp(), nullable=False)

@@ -1,12 +1,10 @@
+import os
 import requests
-from flask_mail import Message
 import logging
 
-# Configure logging
 logger = logging.getLogger(__name__)
 
-# Store API key (Replace with your actual API key)
-apikey = "INSERT YOUR API KEY HERE"  # Using the same key from your map template
+apikey = os.getenv('GOOGLE_MAPS_API_KEY')
 
 def get_coordinates(location_name, city_hint=None):
     """Get coordinates for a location name using Google Geocoding API.
@@ -52,7 +50,3 @@ def get_coordinates(location_name, city_hint=None):
         logger.error(f"API request failed for {location_name}: {e}")
         return None, None
 
-def send_email(subject, recipient, body):
-    msg = Message(subject, sender='your_email@gmail.com', recipients=[recipient])
-    msg.body = body
-    mail.send(msg)
